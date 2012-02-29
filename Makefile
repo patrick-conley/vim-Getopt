@@ -1,7 +1,7 @@
 PLUGIN = Getopt
 
-SOURCE = doc/test.txt
-SOURCE += plugin/test.vim
+SOURCE = doc/Getopt.txt
+SOURCE += plugin/Getopt.vim
 
 all: build install
 
