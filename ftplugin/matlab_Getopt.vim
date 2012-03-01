@@ -6,12 +6,12 @@
 "                license as Vim itself.
 " Documentation: see Getopt.txt
 
-if !exists( "_Getopt_write_matlab" )
-	function _Getopt_write_matlab( opts )
+if !exists( "Getopt.matlab" )
+	function Getopt.matlab() dict
 
 		echo "This is a template function only"
-		echo opts
+		echo "Lang: " . self.ft
+		echo self.opts
 
 	endfunc
-
 endif
