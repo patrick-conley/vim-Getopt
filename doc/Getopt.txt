@@ -1,0 +1,189 @@
+*Getopt.txt*   Write option-parsing code
+
+Author: Patrick Conley <patrick.bj.conley@gmail.com>
+Last change: 2012 Mar 13
+
+1. Using Getopt                  |Getopt|
+2. Use examples                  |Getopt-examples|
+3. Writing filetype plugins      |Getopt-filetype|
+
+==============================================================================
+1. Using Getopt                                    *Getopt*
+
+Getopt does not use any mappings, and has only one command.
+
+:Getopt     will prompt you to enter series of program options, which will be
+            appended to the line under the cursor as calls to getopt or
+            appropriate.
+
+            Typically, not all data will need to be entered for a given
+            option. Prompts that are left blank will be ignored. Use Ctrl-C to
+            stop input at any point.
+
+            See help files on Getopt-<filetype> for details on the data used
+            by each filetype's plugin
+
+==============================================================================
+2. Use examples                                    *Getopt-examples*
+
+The following is an example of a call to Getopt in a simple C program, msg.c.
+The program will either read from a file and print to STDOUT, or write a
+message to the file.
+
+Calls to the program are like this:
+>
+            msg --read
+            msg --write [arg]
+            msg --help
+<
+It can equally accept short options.
+
+Getopt will write the option-parsing string if called like this:
+>
+            :Getopt
+            opt list > argv
+            opt num > argc
+            =====
+            short name > w
+            long name > write
+            has arg > 1
+            action >
+            -----
+            short name > r
+            long name > read
+            has arg > 0
+            action >
+            -----
+            short name > h
+            long name > help
+            has arg > 0
+            action > help();
+            -----
+            short name > 
+<
+The following text will be appended to the current line of msg.c:
+>
+            static struct option long_opts[] = {
+               { "write", 1, NULL, 'w' },
+               { "read", 0, NULL, 'r' },
+               { "help", 0, NULL, 'h' },
+            };
+
+            int c;
+            while ( ( c = getopt_long( argc, argv, "w:rh", long_opts, NULL ) ) != -1 )
+            {
+               switch(c)
+               {
+                  case 'w':
+                     // --write [arg] action here
+                     break;
+                  case 'r':
+                     // --read action here
+                     break;
+                  case 'h':
+                     help();
+                     break;
+               }
+            }
+<
+See |Getopt-C| for details.
+
+==============================================================================
+3. Writing filetype plugins                        *Getopt-write-filetype*
+
+A Getopt plugin for a new filetype should be put in
+|$VIMRUNTIME|/autoload/Getopt/<filetype>.vim. It must define the following
+functions:
+>
+      function Getopt#<filetype>#init()
+      function! Getopt.declare() dict
+      function! Getopt.validate( option hash ) dict
+      function! Getopt.validate_global( global option hash ) dict
+      function! Getopt.write() dict
+<
+These functions are described in detail below. Other functions can be defined
+as needed, but they should not be in the Getopt namespace (and should probably
+be |local-function|s).
+
+Any function above with the overwrite character [!] must include it in the
+definition.
+
+init()                                             *Getopt-write-init*
+
+The init function is called by Getopt using the autoload mechanism, and (by
+its presence) causes vim to load the other required functions into the Getopt
+namespace. It can contain any code or none, but keep in mind that if Getopt is
+called several times on a same filetype, it will not be reloaded.
+
+Mine look something like:
+>
+      function Getopt#c#init()
+         if &ft !~ "c"
+            throw "Getopt#c#init called from outside a C file"
+         endif
+      endfunc
+<
+
+Getopt.declare()                                   *Getopt-write-declare*
+
+The function must set the two variables 'Getopt.opt_data' and
+'Getopt.global_data'.
+
+'opt_data' is a list containing strings identifying the data recognized in an
+option for this language. Each piece of data in turn will be requested of the
+user.
+
+'opt_data' is a list of hashes containing the data recognized in an option for
+this language. Each piece eof data in turn will be requested of the user. The
+only recognized keys in each hash are 'name' and 'default'.
+
+'global_data' is a similar list of hashes identifying data needed globally. 
+>
+      function! Getopt.declare() " Declare C opt info
+         let self:opt_data = [ { 'name':'short_name' },
+                             \ { 'name':'long_name' },
+                             \ { 'name':'has_arg', 'default':0 },
+                             \ { 'name':'action' } ]
+         let self.global_data = [ { 'name':'opt_array','default':'argv' },
+                                \ { 'name':'opt_num', 'default':'argc' } ]
+      endfunc
+<
+
+Getopt.validate() and Getopt.validate_global()     *Getopt-write-validate*
+
+Validate should take as input a hash containing the data for a single option.
+and return either true or false (obviously, depending on whether appropriate
+information has been entered).
+>
+      function! Getopt.validate(D) " validate C opt data
+         " short_name and has_arg are required
+         if ( empty( a:D.short_name ) || empty( a:D.action ) )
+            return 0
+         " long_name (if it exists) must be a string
+         else if ( ! empty( a:D.long_name ) && type( a:D.long_name ) != 1 )
+            return 0
+         " has_arg must be 0, 1, or 2
+         else if ( type( a:D.has_arg ) != 0 || a:D:has_arg !~ '^[012]$' )
+            return 0
+         else
+            return 1
+         endif
+      endfunc
+
+<
+
+Global validation works similarly, but will only be called once.
+
+Getopt.write()                                     *Getopt-write-write*
+
+The last required function should use the data in the list 'Getopt.opts' and
+the hash 'Getopt.global_opts' to create and return the string which will be
+printed to the buffer.
+
+'opts' will be a list generated by concatenating the hashes checked by
+Getopt.validate().
+'global_opts' will be the hash checked by Getopt.validate_global().
+
+I won't bother to post the code, as it's more lengthy than interesting.
+
+vim:tw=78:ft=help:norl:
