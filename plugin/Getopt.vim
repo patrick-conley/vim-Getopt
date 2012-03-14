@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Feb 29
+" Last Changed:  2012 Mar 14
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt
@@ -14,69 +14,170 @@ let loaded_Getopt = 1
 let s:save_cpo = &cpo " Save and reset line continuation opts to default
 set cpo&vim
 
-let Getopt = { 'ft':'', 'opts':'' }
+" global_data: List of data needed once
+" opt_data   : List of data to generate each opt string
+" global_opts: Hash of validated global data
+" opts       : List of validated option hashes
+" optstr     : Final option string
+" last_global: Hash of valid global data from last run
+" last_opts  : List of valid option hashes from last run
+" last_ft    : Filetype of the last file Getopted
+let Getopt = {  'global_data': [], 'opt_data': [], 'global_opts': {},
+         \ 'opts': [], 'optstr': '', 'last_global': {}, 'last_opts': [],
+         \ 'last_ft': ''
+         \ }
 
-" Note:
-" :command -nargs=? MyCom exe "let Var = eval( string( [" . <q-args> . ]" ) )"
-" creates a list of a dictionary set to the contents of
-" :MyCom { 'a':1, 'b':2, ... }
-" The [] wrapper is necessary so it works in case <args> is empty
-
-" Get zero or one options from the command line
+" Define the command
 if !exists( ":Getopt" )
-   command -nargs=? Getopt 
-            \:call Getopt.parse_options( eval( "string( [ " . <q-args> . " ] )" ) )
+   command -nargs=0 Getopt call Getopt.main()
 endif
 
-" Note On Data Format:
-" The option strings are a list of dicts. Possible keys are
-"
-"        'name': (string) The option's full name
-"       'short': (string) The option's short name
-"     'has_arg': (bool)   Whether the option takes an argument:
-"                         0 - no arg
-"                         1 - required arg
-"                         2 - optional arg
-"     'def_arg': (any)    The option's default argument (FIXME: do I want this?)
-"
-" No single option is required. 'has_arg' will default to 0. One of 'name' and
-" 'short' must exist.
+" Function:  main {{{1
+" Arguments: N/A
+" Purpose:   Parse input; call language-specific functions
+function! Getopt.main() dict
 
-" Function:  parse_options( {option?} ) {{{1
-" Arguments: None or
-"            A list of hashes (of each option) or
-"            Several hashes (one for each option)
-" Purpose:   Parse input; call a language-specific function
-if !exists( "Getopt.parse_options" )
-   function Getopt.parse_options( ... ) dict
+   try
 
-      let self.ft = &ft
-      let self.opts = ''
-
-      let ft_function_name = "self." . self.ft
-
-      if exists( ft_function_name )
-         exe "call " . ft_function_name . "()"
-      else
-         call self.default()
+      " Initialize this filetype's version of the Getopt functions
+      if ( empty( &ft ) || &ft != self.last_ft )
+         call eval( "Getopt#" .&ft . "#init()" )
       endif
 
-   endfunc
-endif
+      " Define the list of valid options
+      call self.declare()
+      if empty( "self.opt_data" )
+         echoerr "opt_data not set by Getopt.declare()"
+      endif
 
-" }}}1
+      " Get input from user
+      call self.input()
 
-" Functions:  Getopt.<filetype>() {{{1
-" Arguments:  N/A (option list comes from self.)
-" Purpose:    Define the Getopt contents appropriate for a certain filetype.
-"
-" These functions should be defined in
-" <runtimepath>/ftplugin/<filetype>_Getopt.vim
-if !exists( "Getopt.default" )
-   function Getopt.default() dict
-      throw "No Getopt ftplugin exists for " . self.ft . " files"
-   endfunc
-endif
+      if empty( self.opts ) || 
+               \ ( empty( self.global_opts ) && ! empty( self.global_data ) )
+         echoerr "No options entered. Nothing to do."
+      endif
+
+      " Set the string to be printed
+      call self.write()
+
+      if empty( "self.optstr" )
+         echoerr "optstr not set by Getopt.write()"
+      else
+         call append( ".", self.optstr )
+         let self.optstr = ''
+      endif
+
+   catch E117
+      echomsg "No autoload/Getopt/" . &ft . ".vim exists. Nothing to do."
+
+   catch "^[a-z_]* not set by"
+      return
+
+   catch "Nothing to do"
+      echo "nada"
+      return
+
+   catch " catch anything uncaught
+      echo "Uncaught exception"
+      return
+   endtry
+
+endfunc
+
+" Function:  Getopt.input() {{{1
+" Arguments: N/A (valid options from self)
+" Purpose:   Ask for user to input each option, then validate it
+function Getopt.input() dict
+
+   try
+
+      " Enter global option settings {{{2
+      if ! empty( self.global_data )
+
+         let global_input = {}
+
+         echo "Single-use data:"
+
+         for this in self.global_data
+            if exists( "this.default" )
+               let global_input[this.name] 
+                        \ = input( self.rename_for_input( this.name ) . ' > ',
+                        \ this.default )
+            else
+               let global_input[this.name] 
+                        \ = input( self.rename_for_input( this.name ) . ' > ' )
+            endif
+         endfor
+
+         if self.validate_global( global_input )
+            let self.global_opts = [ global_input ]
+         else
+            echoerr "Invalid global options entered"
+         endif
+
+      endif
+
+      " Enter settings for each option {{{2
+
+      if empty( self.opt_data )
+         echomsg "No option information is defined. Nothing to do."
+         throw "Nothing to do"
+      endif
+
+      echo "Per-option data"
+      while ( 1 )
+
+         echo "Press ^C to finish"
+
+         let opt_input = ''
+
+         for this in self.opt_data
+            if exists( "this.default" )
+               let opt_input[this.name] 
+                        \ = input( self.rename_for_input( this.name ) . ' > ',
+                        \ this.default )
+            else
+               let opt_input[this.name]
+                        \ = input( self.rename_for_input( this.name ) . ' > ' )
+            endif
+
+            if self.validate( opt_input )
+               let self.opts += [ opt_input ]
+            else
+               echoerr "Invalid option data ignored"
+               continue
+            endif
+         endfor
+
+      endwhile " }}}2
+
+   catch "Invalid"
+      return
+
+   catch "Nothing to do"
+      " no options entered => done processing
+      return
+
+   catch 
+      echo "Caught correct end-of-input."
+      return
+
+   endtry
+
+endfunc
+
+" Function:  Getopt.rename_for_input() {{{1
+" Arguments: A single option name
+" Purpose:   Make some simple substitutions to variable names before display
+"            in input prompts
+function! Getopt.rename_for_input( var )
+
+   let var = substitute( a:var, '_', ' ', '' )
+   let var = substitute( a:var, '^\(is\|has\).*$', '&?', '' )
+
+   return a:var
+endfunc
 
 " }}}1
 
