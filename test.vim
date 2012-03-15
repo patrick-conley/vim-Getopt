@@ -26,10 +26,14 @@ try
 
    let name = "main() aborts on unmatched filetype"
    redir => status | silent call Getopt.main() | redir END
-   call Match( status, "Nothing to do", name )
+   call Match( status, "No autoload/[^ ]* exists", name )
 
    let name = "input() aborts clearly on unmatched filetype"
-   redir => status | silent call Getopt.input() | redir END
+   try
+      silent call Getopt.input()
+   catch
+      let status = v:exception
+   endtry
    call Match( status, "No option information is defined", name )
 
 catch

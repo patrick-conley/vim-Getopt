@@ -47,7 +47,7 @@ function! Getopt.main() dict
       " Define the list of valid options
       call self.declare()
       if empty( "self.opt_data" )
-         echoerr "opt_data not set by Getopt.declare()"
+         throw "opt_data not set by Getopt.declare()"
       endif
 
       " Get input from user
@@ -55,14 +55,14 @@ function! Getopt.main() dict
 
       if empty( self.opts ) || 
                \ ( empty( self.global_opts ) && ! empty( self.global_data ) )
-         echoerr "No options entered. Nothing to do."
+         throw "No options entered. Nothing to do."
       endif
 
       " Set the string to be printed
       call self.write()
 
       if empty( "self.optstr" )
-         echoerr "optstr not set by Getopt.write()"
+         throw "optstr not set by Getopt.write()"
       else
          call append( ".", self.optstr )
          let self.optstr = ''
@@ -72,15 +72,14 @@ function! Getopt.main() dict
       echomsg "No autoload/Getopt/" . &ft . ".vim exists. Nothing to do."
 
    catch "^[a-z_]* not set by"
-      return
+      echohl Error | echo v:exception | echohl None
+
+   catch "^Invalid"
+      echohl Error | echo v:exception | echohl None
 
    catch "Nothing to do"
-      echo "nada"
-      return
+      echo v:exception
 
-   catch " catch anything uncaught
-      echo "Uncaught exception"
-      return
    endtry
 
 endfunc
@@ -90,42 +89,41 @@ endfunc
 " Purpose:   Ask for user to input each option, then validate it
 function Getopt.input() dict
 
-   try
+   " Enter global option settings {{{2
+   if ! empty( self.global_data )
 
-      " Enter global option settings {{{2
-      if ! empty( self.global_data )
+      let global_input = {}
 
-         let global_input = {}
+      echo "Single-use data:"
 
-         echo "Single-use data:"
-
-         for this in self.global_data
-            if exists( "this.default" )
-               let global_input[this.name] 
-                        \ = input( self.rename_for_input( this.name ) . ' > ',
-                        \ this.default )
-            else
-               let global_input[this.name] 
-                        \ = input( self.rename_for_input( this.name ) . ' > ' )
-            endif
-         endfor
-
-         if self.validate_global( global_input )
-            let self.global_opts = [ global_input ]
+      for this in self.global_data
+         if exists( "this.default" )
+            let global_input[this.name] 
+                     \ = input( self.rename_for_input( this.name ) . ' > ',
+                     \ this.default )
          else
-            echoerr "Invalid global options entered"
+            let global_input[this.name] 
+                     \ = input( self.rename_for_input( this.name ) . ' > ' )
          endif
+      endfor
 
+      if self.validate_global( global_input )
+         let self.global_opts = global_input
+      else
+         throw "Invalid global data entered"
       endif
 
-      " Enter settings for each option {{{2
+   endif
 
-      if empty( self.opt_data )
-         echomsg "No option information is defined. Nothing to do."
-         throw "Nothing to do"
-      endif
+   " Enter settings for each option {{{2
 
-      echo "Per-option data"
+   if empty( self.opt_data )
+      throw "No option information is defined. Nothing to do"
+   endif
+
+   echo "Per-option data"
+
+   try
       while ( 1 )
 
          echo "Press ^C to finish"
@@ -145,25 +143,18 @@ function Getopt.input() dict
             if self.validate( opt_input )
                let self.opts += [ opt_input ]
             else
-               echoerr "Invalid option data ignored"
+               echomsg "Invalid option data ignored"
                continue
             endif
          endfor
 
-      endwhile " }}}2
+      endwhile 
 
-   catch "Invalid"
-      return
-
-   catch "Nothing to do"
-      " no options entered => done processing
-      return
-
-   catch 
-      echo "Caught correct end-of-input."
-      return
-
+   catch /^Vim:Interrupt/
+      " Valid end of input
    endtry
+      
+      " }}}2
 
 endfunc
 
