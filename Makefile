@@ -6,8 +6,8 @@ SOURCE += $(wildcard autoload/Getopt/*.vim)
 
 all: build install
 
-test: all
-	vim -S test.vim
+test: 
+	~/Documents/Code/vim/vimtap/vtruntest.sh test.vim
 
 build: ${SOURCE}
 	@echo "${SOURCE}" | vim --cmd 'let g:plugin_name="${PLUGIN}"' - -s ../build.vim

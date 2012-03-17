@@ -1,56 +1,45 @@
-source ~/.vim/plugin/Getopt.vim
 set lazyredraw
-let s:results = []
 
-" Testing functions {{{1
-let s:n_tests = 0
-function Match( output, matchstr, name )
-   let s:n_tests = s:n_tests + 1
-   let result = ( a:output =~ a:matchstr ) ? 'ok' : 'not ok'
-   let s:results += [ printf( '%2d %s - %s', s:n_tests, result, a:name ) ]
-endfunc
-
-" }}}1
+call vimtap#Plan(3)
 
 " Empty file {{{1
 silent edit foo
 
-redir => status | silent call Getopt.main() | redir END
+try 
+   redir => stat
+   silent call Getopt.main()
+   redir END
 
-call Match( status, "Nothing to do", "main() aborts on null filetype" )
+   call vimtap#Like( stat, "Nothing to do", "main() aborts on null filetype" )
+catch
+   call vimtap#Fail( "main() threw \"" . v:exception . "\" on null filetype" )
+endtry
 
 " File with no Getopt {{{1
 silent edit foo.html
 
 try 
+   redir => stat
+   silent call Getopt.main()
+   redir END
 
-   let name = "main() aborts on unmatched filetype"
-   redir => status | silent call Getopt.main() | redir END
-   call Match( status, "No autoload/[^ ]* exists", name )
-
-   let name = "input() aborts clearly on unmatched filetype"
-   try
-      silent call Getopt.input()
-   catch
-      let status = v:exception
-   endtry
-   call Match( status, "No option information is defined", name )
-
+   call vimtap#Like( stat, "No autoload/[^ ]* exists",
+            \ "main() aborts on unmatched filetype" )
 catch
-   let s:n_tests = s:n_tests + 1
-   let s:results += 
-            \[ printf( '%2d %s - %s', s:n_tests, 'not ok: exception', name ) ]
+   call vimtap#Fail( "main() threw \"" . v:exception . "\" on unmatched filetype" )
+endtry
+
+try
+   redir => stat
+   silent call Getopt.input()
+   redir END
+
+   call vimtap#Fail( "input() returned with \"" . stat . '"' )
+catch
+   call vimtap#Like( v:exception, "No option information is defined",
+            \ "input() requires declared option information" )
 endtry
 
 " }}}1
 
 " display results
-edit test-results
-setlocal buftype=nofile
-setlocal noswapfile
-
-call append( '0', s:results )
-
-if match( s:results, "^[0-9]* not" ) == -1
-   call append( '$', printf( "All %d tests passed", s:n_tests ) )
-endif
