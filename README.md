@@ -36,7 +36,7 @@ Or just clone the whole thing wherever you like with
 Examples
 --------
 
-In all these examples, bold text has been entered by the user. These examples
+In all these examples, text in asterisks has been entered by the user. These examples
 are also only meant to be illustrative! Whether or not Getopt acts as shown
 depends on what functionality I've written and whether this readme is up to
 date.
