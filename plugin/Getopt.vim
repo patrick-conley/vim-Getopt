@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Mar 14
+" Last Changed:  2012 Mar 19
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt
@@ -89,41 +89,41 @@ endfunc
 " Purpose:   Ask for user to input each option, then validate it
 function Getopt.input() dict
 
-   " Enter global option settings {{{2
-   if ! empty( self.global_data )
+   try
 
-      let global_input = {}
+      " Enter global option settings {{{2
+      if ! empty( self.global_data )
 
-      echo "Single-use data:"
+         let global_input = {}
 
-      for this in self.global_data
-         if exists( "this.default" )
-            let global_input[this.name] 
-                     \ = input( self.rename_for_input( this.name ) . ' > ',
-                     \ this.default )
+         echo "Single-use data:"
+
+         for this in self.global_data
+            if exists( "this.default" )
+               let global_input[this.name] 
+                        \ = input( self.rename_for_input( this.name ) . ' > ',
+                        \ this.default )
+            else
+               let global_input[this.name] 
+                        \ = input( self.rename_for_input( this.name ) . ' > ' )
+            endif
+         endfor
+
+         if self.validate_global( global_input )
+            let self.global_opts = global_input
          else
-            let global_input[this.name] 
-                     \ = input( self.rename_for_input( this.name ) . ' > ' )
+            throw "Invalid global data entered"
          endif
-      endfor
 
-      if self.validate_global( global_input )
-         let self.global_opts = global_input
-      else
-         throw "Invalid global data entered"
       endif
 
-   endif
+      " Enter settings for each option {{{2
 
-   " Enter settings for each option {{{2
+      if empty( self.opt_data )
+         throw "No option information is defined. Nothing to do"
+      endif
 
-   if empty( self.opt_data )
-      throw "No option information is defined. Nothing to do"
-   endif
-
-   echo "Per-option data"
-
-   try
+      echo "Per-option data"
       while ( 1 )
 
          echo "Press ^C to finish"
@@ -150,12 +150,12 @@ function Getopt.input() dict
 
       endwhile 
 
+      " }}}2
+
    catch /^Vim:Interrupt/
       " Valid end of input
    endtry
       
-      " }}}2
-
 endfunc
 
 " Function:  Getopt.rename_for_input() {{{1
