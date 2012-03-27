@@ -14,7 +14,7 @@ pathogen:
 	cp -r ${SOURCEDIRS} ${PATHOGEN}/${PLUGIN}
 
 test: 
-	vtruntest.sh test.vim
+	./test.sh
 
 build: ${SOURCE}
 	@echo "${SOURCE}" | vim - -c "let g:vimball_home = '.'" -c '%s/ //g' -c "execute '%MkVimball!' . '${PLUGIN}'" -c 'qa!'
