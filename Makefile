@@ -29,5 +29,5 @@ clean:
 
 # For internal use only
 edit:
-	vim plugin/Getopt.vim -c "bel vsp autoload/Getopt/c.vim" -c "bel sp autoload/Getopt/matlab.vim" -c "tabe doc/Getopt.txt" -c "tabe Makefile" -c "vsp test.vim" -c "tabn"
+	vim plugin/Getopt.vim -c "bel vsp autoload/Getopt/c.vim | bel sp autoload/Getopt/matlab.vim" -c "tabe doc/Getopt.txt | bel vsp Makefile" -c "tabe t/autoload/Getopt/t_data.vim | bel vsp t/full.vim | bel sp t/data.vim" -c "tabn"
 

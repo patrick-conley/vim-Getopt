@@ -1,16 +1,18 @@
 *Getopt.txt*   Write option-parsing code
 
 Author: Patrick Conley <patrick.bj.conley@gmail.com>
-Last change: 2012 Mar 19
+Last change: 2012 Mar 26
 
 1. Using Getopt                  |Getopt|
 2. Use examples                  |Getopt-examples|
 3. Writing filetype plugins      |Getopt-filetype|
+4. Bugs (and todo list)          |Getopt-bugs|
 
 ==============================================================================
 1. Using Getopt                                    *Getopt*
 
-Getopt does not use any mappings, and has only one command.
+Getopt does not use any mappings, and has only one command and one
+configurable setting.
 
 :Getopt     will prompt you to enter series of program options, which will be
             appended to the line under the cursor as calls to getopt or
@@ -22,6 +24,11 @@ Getopt does not use any mappings, and has only one command.
 
             See help files on Getopt-<filetype> for details on the data used
             by each filetype's plugin
+
+g:Getopt_save_last
+            if true, Getopt will remember the last filetype it was run on. It
+            only exists (at present) to make certain things easier in my
+            testing code. Defaults to true.
 
 ==============================================================================
 2. Use examples                                    *Getopt-examples*
@@ -178,12 +185,19 @@ must be defined, it can be left empty if there is no global data.
 Getopt.write()                                     *Getopt-write-write*
 
 The last required function should use the data in the list 'Getopt.opts' and
-the hash 'Getopt.global_opts' to create and return the string which will be
-printed to the buffer.
+the hash 'Getopt.global_opts' to create and return a string or list which will
+be printed to the buffer. If it returns value is a list, each element will be
+printed on a separate line.
 
 'opts' will be a list holding the hashes checked by Getopt.validate().
 'global_opts' will be the hash checked by Getopt.validate_global().
 
-I won't bother to post the code, as it's more lengthy than interesting.
+I won't bother to post sample code, as it's more lengthy than interesting.
+
+==============================================================================
+4. Bugs (and todo list)                            *Getopt-bugs*
+
+- should set defaults in get_input() to the options entered in the last run
+- Getopt.test() should exist to run test cases on the filetype modules
 
 vim:tw=78:ft=help:norl:
