@@ -10,7 +10,7 @@ PATHOGEN := $$HOME/.vim/bundle
 ball: build install
 
 pathogen:
-	mkdir ${PATHOGEN}/${PLUGIN}
+	mkdir -p ${PATHOGEN}/${PLUGIN}
 	cp -r ${SOURCEDIRS} ${PATHOGEN}/${PLUGIN}
 
 test: 
