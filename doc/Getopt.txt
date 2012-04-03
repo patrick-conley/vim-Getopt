@@ -1,17 +1,18 @@
 *Getopt.txt*   Write option-parsing code
 
 Author: Patrick Conley <patrick.bj.conley@gmail.com>
-Last change: 2012 Mar 26
+Last change: 2012 Mar 28
 
 1. Using Getopt                  |Getopt|
 2. Use examples                  |Getopt-examples|
 3. Writing filetype plugins      |Getopt-filetype|
-4. Bugs (and todo list)          |Getopt-bugs|
+4. Testing filetype plugins      |Getopt-test|
+5. Bugs (and todo list)          |Getopt-bugs|
 
 ==============================================================================
 1. Using Getopt                                    *Getopt*
 
-Getopt does not use any mappings, and has only one command and one
+Getopt does not use any mappings, and has only two commands and one
 configurable setting.
 
 :Getopt     will prompt you to enter series of program options, which will be
@@ -25,10 +26,16 @@ configurable setting.
             See help files on Getopt-<filetype> for details on the data used
             by each filetype's plugin
 
+:Getopttest runs a short series of tests on the filetype functions for the
+            current file. Validation is necessarily incomplete, as I can't
+            properly predict what input is expected for a given filetype. See
+            a few more details in |Getopt-test|. Depends on VimTAP.
+
 g:Getopt_save_last
-            if true, Getopt will remember the last filetype it was run on. It
-            only exists (at present) to make certain things easier in my
-            testing code. Defaults to true.
+            If true, Getopt will remember the last filetype it was run on,
+            which potentially saves some loading time (and will do more later
+            on). The variable only exists (at present) to make certain things
+            easier in my testing code. Defaults to true.
 
 ==============================================================================
 2. Use examples                                    *Getopt-examples*
@@ -115,6 +122,7 @@ be |local-function|s).
 Any function above with the overwrite character [!] must include it in the
 definition.
 
+------------------------------------------------------------------------------
 init()                                             *Getopt-write-init*
 
 The init function is called by Getopt using the autoload mechanism, and (by
@@ -131,6 +139,7 @@ Mine look something like:
       endfunc
 <
 
+------------------------------------------------------------------------------
 Getopt.declare()                                   *Getopt-write-declare*
 
 The function must set the two variables 'Getopt.opt_data' and
@@ -156,6 +165,7 @@ only recognized keys in each hash are 'name' and 'default'.
       endfunc
 <
 
+------------------------------------------------------------------------------
 Getopt.validate() and Getopt.validate_global()     *Getopt-write-validate*
 
 Validate should take as input a hash containing the data for a single option.
@@ -182,6 +192,7 @@ information has been entered).
 Global validation works similarly, but will only be called once. Although it
 must be defined, it can be left empty if there is no global data.
 
+------------------------------------------------------------------------------
 Getopt.write()                                     *Getopt-write-write*
 
 The last required function should use the data in the list 'Getopt.opts' and
@@ -195,9 +206,24 @@ printed on a separate line.
 I won't bother to post sample code, as it's more lengthy than interesting.
 
 ==============================================================================
-4. Bugs (and todo list)                            *Getopt-bugs*
+4. Testing filetype plugins                        *Getopt-test*
+
+>
+      :Getopttest
+<
+This command runs a series of tests on the filetype functions for the file in
+the active buffer. The tests aren't meant to be comprehensive (because I don't
+know what kind of data a given filetype will require), but should let you know
+if you've done something really stupid.
+
+Running tests requires |VimTAP|, at
+http://www.vim.org/scripts/script.php?script_id=2213
+
+==============================================================================
+5. Bugs (and todo list)                            *Getopt-bugs*
 
 - should set defaults in get_input() to the options entered in the last run
 - Getopt.test() should exist to run test cases on the filetype modules
+- allow filetype modules to define valid and invalid input for tests
 
 vim:tw=78:ft=help:norl:
