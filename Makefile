@@ -2,7 +2,7 @@ PLUGIN = Getopt
 
 SOURCE := doc/Getopt.txt
 SOURCE += plugin/Getopt.vim
-SOURCE += $(wildcard autoload/Getopt/*.vim)
+SOURCE += $(wildcard autoload/**.vim)
 
 SOURCEDIRS = doc/ plugin/ autoload/
 PATHOGEN := $$HOME/.vim/bundle
@@ -29,5 +29,5 @@ clean:
 
 # For internal use only
 edit:
-	vim plugin/Getopt.vim -c "bel vsp autoload/Getopt/c.vim | bel sp autoload/Getopt/matlab.vim" -c "tabe doc/Getopt.txt | bel vsp Makefile" -c "tabe t/autoload/Getopt/t_data.vim | bel vsp t/full.vim | bel sp t/data.vim" -c "tabn"
+	vim plugin/Getopt.vim -c "bel vsp autoload/Getopt.vim " -c "tabe doc/Getopt-internal.txt | bel vsp doc/Getopt.txt" -c "tabe Makefile" -c "tabe autoload/Getopt/matlab.vim | bel vsp autoload/Getopt/c.vim" -c "tabn"
 

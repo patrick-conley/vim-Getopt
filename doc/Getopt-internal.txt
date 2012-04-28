@@ -1,0 +1,234 @@
+*Getopt-internal.txt*   Implementation details of Getopt
+
+                                                   *Getopt-internal*
+
+Author: Patrick Conley <patrick.bj.conley@gmail.com>
+Last change: 2012 Apr 27
+
+Note: I've decided to call the hashes declared by declare() to be hashes of
+keys (hashes of keys, fantastic…), ie., global_keys, opt_keys. 'Data' will be
+the input entered by the user
+
+1. Functions         |Getopt-internal-functions|
+2. Classes           |Getopt-internal-classes|
+2a.                     |Getopt#Filetype|
+2b.                     |Getopt#Saved|
+3. Filetype plugins  |Getopt-internal-filetype|
+4. Tests             |Getopt-internal-tests|
+5. Bugs (and todo)   |Getopt-internal-bugs|
+
+==============================================================================
+1. Functions                                       *Getopt-internal-functions*
+
+There are two functions meant to be accessed from outside the script (in the
+two defined commands Getopt and Getopttest, to be specific): >
+         Run
+<     Creates an instance of |Getopt#Filetype|, performs basic validation on
+it, and passes it as an argument to the appropriate functions. Effectively
+unchanged from the non-class-based version
+      Arguments: none; optional list to be passed unmodified to Get_input
+>
+         Test
+<     Creates an instance of |Getopt#Filetype| and runs tests on it. Unchanged
+from the non-class-based version.
+      Arguments: none
+
+There are some internal functions used by these two.
+For Run: >
+         _Get_input
+<     gets input: Gets the hashes of keys from |Getopt#Filetype|, prompts the
+      user for input, and passes the input to the validator.
+      Arguments: a Filetype object
+>
+         _Rename_for_input
+<     performs some very basic renaming of a key for readability.
+      Arguments: a single key
+
+For Test: >
+         _Test_data
+<     Filetype.opt_keys and Filetype.global_keys are identically-formatted.
+      Tests on them use a single function.
+      Arguments: opt_keys or global_keys
+
+
+==============================================================================
+2. Classes                                         *Getopt-internal-classes*
+
+Getopt is implemented using two classes: >
+         Getopt#Filetype
+         Getopt#Saved
+<
+
+==============================================================================
+2a. Getopt#Filetype                                *Getopt#Filetype*
+
+This class contains all the data used in a call to Getopt. My hope is that
+(the current|some future) version will instantiate multiple objects of this
+class if it gets called on multiple filetypes within a single session, so that
+last_global and last_opts can be reused more universally.
+
+------------------------------------------------------------------------------
+Data: >
+         global_keys
+<     List of information that will be needed once. Set by
+      |Getopt#{&ft}#ft|.New
+>
+         opt_keys
+<     List of data needed to generate each opt string. Set by
+      |Getopt#{&ft}#ft|.New
+>
+         global_data
+<     Hash of validated global data. Set by Getopt#Run
+>
+         opt_data
+<     List of validated option hashes. Set by Getopt#Run
+>
+         optstr
+<     Final option string (let uninitialized because it may be a list or
+      string)
+      Note: I don't need this: the string will be returned by .Write, and can
+      be recreated from data and global_data anyway if needed.
+>
+         last_global
+<     Hash of valid global data from last run. Set by |Getopt#Filetype|.Save
+>
+         last_opts  
+<     List of valid option hashes from last run. Set by
+|Getopt#Filetype|.Save
+>
+         last_ft    
+<     Filetype of the last file Getopted
+      Note: get rid of this - an instance of Filetype will not reload
+      filetype functions
+>
+         input
+<     List of data to be used as non-interactive option data. Set by
+      Getopt#Filetype#SetInputList
+
+------------------------------------------------------------------------------
+Methods: >
+         .New
+<     Create a new Getopt#Filetype object, call .Init and the filetype's
+      autoload file, and return the object.
+      See vimtap.
+      Arguments: None
+>
+         .Init
+<     Set initial/default values for all the data.
+      Arguments: None
+>
+         .Save
+<     Copy opt_data and .global_data to last_* and reset *data to default
+      values. Call |Getopt#Saved|.SetFt to save the entire Filetype object
+      Arguments: None
+>
+         .HasData
+<     Check that .opt_data (and .global_data, if appropriate) are non-empty
+      lists. No validation on the contents of these lists is performed
+      Arguments: None
+>
+         .SetInputList
+<     Sets the non-interactive input list .input and performs basic
+      validation.  Checks only that it's a list of length
+      len(global_keys)+i*len(opt_keys)
+      Arguments: a list of input data
+>
+         .Declare
+<     From the filetype autoload. Set .global_keys and .opt_keys.
+      Arguments: None
+      Note: get rid of this - its behaviour is merged into Getopt#Filetype
+>
+         .Validate
+<     From the filetype autoload. Check if a single hash of data is valid.
+      Arguments: a hash of per-option data
+>
+         .Validate_global
+<     From the filetype autoload. Check if a hash of global data is valid.
+      Optional if .global_keys is undefined
+      Arguments: a hash of global data
+>
+         .Write
+<     From the filetype autoload. Create and return a string or list out of
+      the data in .opt_data and .global_data. Or from anything else, really,
+      but that'd be dumb.
+      Arguments: None
+
+==============================================================================
+2b. Getopt#Saved                                   *Getopt#Saved*
+
+Getopt#Saved is a static class of |Getopt#Filetype| objects which have already
+been run. It allows only setting and getting a specific object
+
+------------------------------------------------------------------------------
+Data: >
+         filetypes
+<     A dictionary storing all the Getopt#Filetype objects in the class.
+      Exists mainly for namespacing reasons.
+
+------------------------------------------------------------------------------
+Methods: >
+         .New
+<     NO SUCH METHOD. The static class shouldn't have provisions for
+      initializing copies of itself.
+>
+         .Init
+<     Set class data to default values.
+      Arguments: None
+>
+         .SetFt
+<     Add the given Filetype object to the .filetypes dictionary
+      Arguments: a filetype and a Filetype object
+>
+         .GetFt
+<     Try to return the appropriate filetype object.
+      Arguments: a filetype
+>
+         .CheckFt
+<     Return whether or not a filetype object exists in the .filetypes dict.
+      Arguments: a filetype
+
+==============================================================================
+3. Filetype plugins                                *Getopt-internal-filetype*
+                                                   *Getopt#{&ft}#ft*
+
+The filetype plugins are subclasses of |Getopt#Filetype|. Their .New methods
+create and return an object of the class as normal, but this object is
+immediately appended to the Filetype object.
+
+Methods: >
+         .New
+<     Create and return a copy of the object; set .opt_keys and .global_keys.
+      May set initial values of any internal variables.
+      NB: I have no reason to explicitly disallow it from resetting
+      Getopt#Filetype's member variables, unless the type is changed.
+      Arguments: None
+>
+         .Validate
+         .Validate_global
+         .Write
+<     are all as described in |Getopt-internal-classes|.
+
+==============================================================================
+4. Tests                                           *Getopt-internal-tests*
+
+Unit tests are run from t/, and are based on the |VimTAP| plugin.
+
+------------------------------------------------------------------------------
+Getopt#Test
+
+Use the testing filetype autoload Getopt#t#ft to test the tests of the
+filetype autoloads. 
+Getopt#{&ft}#ft
+
+These are sort of meta-tests. The filetype plugins are prerequisites for the
+other tests, so these tests will ensure they are consistent.
+
+- 
+
+==============================================================================
+5. Bugs (and todo list)                            *Getopt-bugs*
+
+- should set defaults in get_input() to the options entered in the last run
+- allow filetype modules to define valid and invalid input for tests
+
+vim:tw=78:ft=help:norl:
