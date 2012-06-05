@@ -1,12 +1,12 @@
 *Getopt.txt*   Write option-parsing code
 
 Author: Patrick Conley <patrick.bj.conley@gmail.com>
-Last change: 2012 Apr 27
+Last change: 2012 Jun 03
 
 1. Using Getopt                  |Getopt|
-2. Use examples                  |Getopt-examples|
-3. Writing filetype plugins      |Getopt-filetype|
-4. Testing filetype plugins      |Getopt-test|
+2. Use examples                  |Getopt_examples|
+3. Writing filetype classes      |Getopt_filetype|
+4. Testing filetype classes      |Getopt_test|
 
 ==============================================================================
 1. Using Getopt                                    *Getopt*
@@ -22,16 +22,16 @@ configurable setting.
             option. Prompts that are left blank will be ignored. Use Ctrl-C to
             stop input at any point.
 
-            See help files on Getopt-<filetype> for details on the data used
-            by each filetype's plugin
+            See help files on Getopt_<filetype> for details on the data used
+            by each filetype's module
 
 :Getopttest runs a short series of tests on the filetype functions for the
             current file. Validation is necessarily incomplete, as I can't
             properly predict what input is expected for a given filetype. See
-            a few more details in |Getopt-test|. Depends on VimTAP.
+            a few more details in |Getopt_test|. Depends on VimTAP.
 
 ==============================================================================
-2. Use examples                                    *Getopt-examples*
+2. Use examples                                    *Getopt_examples*
 
 The following is an example of a call to Getopt in a simple C program, msg.c.
 The program will either read from a file and print to STDOUT, or write a
@@ -93,12 +93,12 @@ The following text will be appended to the current line of msg.c:
                }
             }
 <
-See |Getopt-C| for details.
+See |Getopt_C| for details.
 
 ==============================================================================
-3. Writing filetype plugins                        *Getopt-write-filetype*
+3. Writing filetype modules                        *Getopt_write_filetype*
 
-A Getopt plugin for a new filetype should be put in
+A Getopt module for a new filetype should be put in
 |$VIMRUNTIME|/autoload/Getopt/<filetype>.vim. It must define the following
 functions:
 >
@@ -111,8 +111,12 @@ These functions are described in detail below. Other functions can be defined
 as needed, provided they don't attempt to overwrite functions in the
 |Getopt#Filetype| class.
 
+A help file ought to be created for each module, describing in some detail its
+keys. The help can be put in any appropriate doc/ directory, but should be
+named 'Getopt_<filetype>' for consistency.
+
 ------------------------------------------------------------------------------
-New()                                              *Getopt-write-new*
+New()                                              *Getopt_write_new*
 
 The .New() method must return a copy of itself with the internal variables
 self.opt_keys and (optionally) self.global_keys set.
@@ -140,7 +144,7 @@ Mine look something like:
 <
 
 ------------------------------------------------------------------------------
-Validate() and Validate_global()                   *Getopt-write-validate*
+Validate() and Validate_global()                   *Getopt_write_validate*
 
 Validate should take as input a hash containing input data for a single option.
 and return either true or false (obviously, depending on whether appropriate
@@ -166,7 +170,7 @@ information has been entered).
 Global validation works similarly, but will only be called once.
 
 ------------------------------------------------------------------------------
-Write()                                            *Getopt-write-write*
+Write()                                            *Getopt_write_write*
 
 The last required function should use the data in the list 'self.opt_data' and
 the hash 'self..global_data' to create and return a string or list which will
@@ -179,7 +183,7 @@ on a separate line.
 I won't bother to post sample code, as it's lengthy rather than interesting.
 
 ==============================================================================
-4. Testing filetype plugins                        *Getopt-test*
+4. Testing filetype classes                        *Getopt_test*
 
 >
       :Getopttest

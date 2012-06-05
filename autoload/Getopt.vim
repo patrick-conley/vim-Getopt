@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Apr 27
+" Last Changed:  2012 Jun 05
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt and Getopt-internal.txt
@@ -14,17 +14,23 @@ set cpo&vim
 " Getopt#Filetype {{{2
 " Description: This class contains all the data used while creating option
 " strings, as well as the various functions specific to a filetype and
-" declared in the filetype's autoloaded plugin.
+" declared in the filetype's autoloaded module.
 
 let Getopt#Filetype = {}
 
 " .New {{{3
-function Getopt#Filetype.New() dict
+function Getopt#Filetype.New(...) dict
+   let filetype = a:0 == 1 ? a:1 : &ft
+
    let harness = copy( self )
    call self.Init( harness )
 
    " Add the filetype functions to the object
-   call extend( harness, g:Getopt#{&ft}#ft.New() )
+   try
+      call extend( harness, g:Getopt#{filetype}#ft.New() )
+   catch /E121/
+      throw "Getopt#Filetype: Filetype " . filetype . " undefined. Cannot create object"
+   endtry
 
    " Double-check opt_keys is set
    if empty( harness.opt_keys )
@@ -106,22 +112,35 @@ let Getopt#Saved = {}
 " deliberately fails to check if the data has already been set, as I may need
 " to reset the class to a blank state
 function Getopt#Saved.Init() dict
-   let self.filetypes = {}
+   let self.ft_dict = {}
 endfunc
 
 " .SetFt {{{3
 function Getopt#Saved.SetFt( ft, obj ) dict
-   let self.filetypes[a:ft] = a:obj
+
+   " Only allow hashes to be added
+   if type( a:obj ) != type( {} )
+      throw "Getopt#Saved: input must be a Filetype object"
+   " Only allow hashes which are supersets of Getopt#Filetype to be added
+   elseif filter( copy( g:Getopt#Filetype ), '! has_key( a:obj, v:key )' ) != {}
+      throw "Getopt#Saved: input must be a Filetype object"
+   endif
+
+   let self.ft_dict[a:ft] = a:obj
 endfunc
 
 " GetFt {{{3
 function Getopt#Saved.GetFt( ft ) dict
-   return self.filetypes[a:ft]
+   if self.CheckFt( a:ft )
+      return self.ft_dict[a:ft]
+   else
+      return
+   endif
 endfunc
 
 " CheckFt {{{3
 function Getopt#Saved.CheckFt( ft ) dict
-   return exists( "Getopt.filetype." . a:ft )
+   return has_key( self.ft_dict, a:ft )
 endfunc
 " }}}3
 
@@ -163,7 +182,7 @@ function Getopt#Run(...)
 
       if empty( optstr )
          throw "Getopt: optstr not set by .Write()"
-      elseif ( exists( "buffer_ft.input" ) )
+      elseif has_key( buffer_ft, "input" ) )
          return optstr
       else
          call append( ".", optstr )
@@ -198,12 +217,11 @@ function Getopt#_Get_input( buffer_ft )
 
    " Make sure there aren't leftovers from the last run!
    if ( !empty( a:buffer_ft.opt_data ) || !empty( a:buffer_ft.global_data ) )
-      throw "Getopt: Invalid call to Getopt#Get_input: data has not been Save()d"
+      throw "Getopt: Unclean Filetype object passed to _Get_input()"
    endif
 
    " Data may be entered non-interactively through the .input list
-   if ( exists( "a:buffer_ft.input" ) && ! empty( a:buffer_ft.input ) 
-            \ && type( a:buffer_ft.input ) != type( [] ) )
+   if ( has_key( a:buffer_ft, "input" ) && empty( a:buffer_ft.input ) || type( a:buffer_ft.input ) != type( [] ) )
       throw "Getopt: Invalid non-interactive input"
    endif
 
@@ -219,11 +237,11 @@ function Getopt#_Get_input( buffer_ft )
             let global_input[this.name] = ''
 
             " Read non-interactive input
-            if exists( "a:buffer_ft.input" )
+            if has_key( a:buffer_ft, "input" )
                let global_input[this.name] = remove( a:buffer_ft.input, 0 )
 
             " Read interactive input, possibly with a default arg
-            elseif exists( "this.default" )
+            elseif has_key( this, "default" )
                let global_input[this.name]
                         \ = input( Getopt#_Rename_for_input(this.name) . ' > ', 
                                  \ this.default )
@@ -234,10 +252,10 @@ function Getopt#_Get_input( buffer_ft )
          endfor
 
          " Validate input
-         if a:buffer_ft.validate_global( global_input )
-            let a:buffer_ft.global_opts = global_input
+         if a:buffer_ft.Validate_global( global_input )
+            let a:buffer_ft.global_data = global_input
          else
-            throw "Invalid global data entered"
+            throw "Getopt: Invalid global data entered"
          endif
 
       endif
@@ -245,23 +263,29 @@ function Getopt#_Get_input( buffer_ft )
       " Enter settings for each option {{{3
 
       if empty( a:buffer_ft.opt_keys )
-         throw "No option information is defined. Nothing to do"
+         throw "Getopt: No option information is defined. Nothing to do"
       endif
 
       echo "Per-option data:"
       echo "Press ^C to finish"
       while (1)
 
+         " Non-interactive input can only safely be empty at the start of an
+         " option line
+         if ( has_key( a:buffer_ft, "input" ) && empty( a:buffer_ft.input ) )
+            break
+         endif
+
          let opt_input = {}
          for this in a:buffer_ft.opt_keys
             let opt_input[this.name] = ''
 
             " Read non-interactive input
-            if exists( "a:buffer_ft.input" )
+            if has_key( a:buffer_ft, "input" )
                let opt_input[this.name] = remove( a:buffer_ft.input, 0 )
 
             " Read interactive input, possibly with a default arg
-            elseif exists( "this.default" )
+            elseif has_key( this, "default" )
                let opt_input[this.name]
                         \ = input( Getopt#_Rename_for_input(this.name) . ' > ', 
                                  \ this.default )
@@ -272,8 +296,8 @@ function Getopt#_Get_input( buffer_ft )
          endfor
 
          " Validate input
-         if a:buffer_ft.validate( opt_input )
-            let a:buffer_ft.opts += [ opt_input ]
+         if a:buffer_ft.Validate( opt_input )
+            let a:buffer_ft.opt_data += [ opt_input ]
             echo "Option recorded"
          else
             echomsg "Invalid option ignored"
@@ -306,27 +330,35 @@ function Getopt#_Rename_for_input( var )
             \ '^\(is\|has\|does\).*$', '&?'
             \ ]
 
-   for i in range( 0, len(pattern), 2 )
-      let var = substitute( var, pattern[i], pattern[i+1] )
+   for i in range( 0, len(pattern)-1, 2 )
+      let var = substitute( var, pattern[i], pattern[i+1], '' )
    endfor
 
    return var
 endfunc
 
 " Function:  Test {{{2
-" Purpose:   Perform some basic tests of the filetype plugin of the current
+" Purpose:   Perform some basic tests of the filetype module of the current
 "            file. It should test that each of the functions exist, that
 "            function set appropriate Getopt members, return appropriate
 "            values, and fail where appropriate.
 " Arguments: boolean whether to run interactively (for unit testing). The only
 "            change is that in non-interactive mode results won't be displayed
 " Return:    The name of the file where VimTAP wrote test results
+" TODO:      Test that Write outputs a string or list
 function Getopt#Test( interactive )
    let result_file = tempname()
 
    try
       call vimtap#SetOutputFile(result_file)
       call vimtap#Plan(20)
+
+      try
+         echo g:Getopt#{&ft}#ft
+      catch /E121/
+         call vimtap#BailOut( "No filetype module could be found for filetype '"
+                  \ . &ft . "'" )
+      endtry
 
       " Getopt#{ft}#ft.New() runs properly (x2) {{{3
       let init_fn = "Getopt#" . &ft . "#ft.New()"
@@ -376,14 +408,14 @@ function Getopt#Test( interactive )
          endtry
       endif
 
-      " (important) all functions are defined (x4) {{{3
+      " (important) all functions are defined (x3) {{{3
 
       let stat = 1 " all functions must exist or we fail
-      let stat = stat * vimtap#Ok( exists( "test_ft.Validate" ), "Validate() is defined" )
+      let stat = stat * vimtap#Ok( has_key( test_ft, "Validate" ), "Validate() is defined" )
       let stat = stat * vimtap#Ok( 
-               \ exists( "test_ft.Validate_global" ) || empty( test_ft.global_keys ), 
+               \ has_key( test_ft, "Validate_global" ) || empty( test_ft.global_keys ), 
                \ "Validate_global() is defined/global keys aren't used" )
-      let stat = stat * vimtap#Ok( exists( "test_ft.Write" ), "Write() is defined" )
+      let stat = stat * vimtap#Ok( has_key( test_ft, "Write" ), "Write() is defined" )
 
       if stat == 0
          call vimtap#BailOut( "Functions don't exist. Can't continue." )
@@ -425,7 +457,7 @@ function Getopt#Test( interactive )
                \ "Validate() fails on empty input" )
 
       " Validate_global works (to limits of testing) (x4) {{{3
-      if ( ! vimtap#Skip( 3, !empty( test_ft.global_keys ),
+      if ( ! vimtap#Skip( 4, !empty( test_ft.global_keys ),
                \ "Don't run tests on unset global_keys" ) )
 
          " requires one argument
@@ -513,13 +545,13 @@ function Getopt#_Test_data( data )
          call add( failures, item )
          continue
       " Check it contains a 'name'
-      elseif ! exists( "item['name']" )
+      elseif ! has_key( item, "name" )
          call add( failures, item )
          call remove( item, 'name' ) " for warning about unknown keys below
       endif
 
       " Warn about unknown keys
-      if exists( "item['default']" )
+      if has_key( item, "default" )
          call remove( item, 'default' )
       endif
       if ! empty( item )

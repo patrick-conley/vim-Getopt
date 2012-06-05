@@ -1,24 +1,24 @@
-*Getopt-internal.txt*   Implementation details of Getopt
+*Getopt_internal.txt*   Implementation details of Getopt
 
-                                                   *Getopt-internal*
+                                                   *Getopt_internal*
 
 Author: Patrick Conley <patrick.bj.conley@gmail.com>
-Last change: 2012 Apr 27
+Last change: 2012 Jun 05
 
-Note: I've decided to call the hashes declared by declare() to be hashes of
-keys (hashes of keys, fantastic…), ie., global_keys, opt_keys. 'Data' will be
-the input entered by the user
+Note(todo): I've decided to call the hashes declared by declare() to be hashes
+of keys (hashes of keys, fantastic…), ie., global_keys, opt_keys. 'Data' will
+be the input entered by the user
 
-1. Functions         |Getopt-internal-functions|
-2. Classes           |Getopt-internal-classes|
+1. Functions         |Getopt_internal_functions|
+2. Classes           |Getopt_internal_classes|
 2a.                     |Getopt#Filetype|
 2b.                     |Getopt#Saved|
-3. Filetype plugins  |Getopt-internal-filetype|
-4. Tests             |Getopt-internal-tests|
-5. Bugs (and todo)   |Getopt-internal-bugs|
+3. Filetype modules  |Getopt_internal_filetype|
+4. Tests             |Getopt_internal_tests|
+5. Bugs (and todo)   |Getopt_internal_bugs|
 
 ==============================================================================
-1. Functions                                       *Getopt-internal-functions*
+1. Functions                                       *Getopt_internal_functions*
 
 There are two functions meant to be accessed from outside the script (in the
 two defined commands Getopt and Getopttest, to be specific): >
@@ -52,7 +52,7 @@ For Test: >
 
 
 ==============================================================================
-2. Classes                                         *Getopt-internal-classes*
+2. Classes                                         *Getopt_internal_classes*
 
 Getopt is implemented using two classes: >
          Getopt#Filetype
@@ -64,7 +64,7 @@ Getopt is implemented using two classes: >
 
 This class contains all the data used in a call to Getopt. My hope is that
 (the current|some future) version will instantiate multiple objects of this
-class if it gets called on multiple filetypes within a single session, so that
+class if it gets called on multiple.ft_dict within a single session, so that
 last_global and last_opts can be reused more universally.
 
 ------------------------------------------------------------------------------
@@ -134,21 +134,21 @@ Methods: >
       Arguments: a list of input data
 >
          .Declare
-<     From the filetype autoload. Set .global_keys and .opt_keys.
+<     From the filetype class. Set .global_keys and .opt_keys.
       Arguments: None
       Note: get rid of this - its behaviour is merged into Getopt#Filetype
 >
          .Validate
-<     From the filetype autoload. Check if a single hash of data is valid.
+<     From the filetype class. Check if a single hash of data is valid.
       Arguments: a hash of per-option data
 >
          .Validate_global
-<     From the filetype autoload. Check if a hash of global data is valid.
+<     From the filetype class. Check if a hash of global data is valid.
       Optional if .global_keys is undefined
       Arguments: a hash of global data
 >
          .Write
-<     From the filetype autoload. Create and return a string or list out of
+<     From the filetype class. Create and return a string or list out of
       the data in .opt_data and .global_data. Or from anything else, really,
       but that'd be dumb.
       Arguments: None
@@ -161,7 +161,7 @@ been run. It allows only setting and getting a specific object
 
 ------------------------------------------------------------------------------
 Data: >
-         filetypes
+         ft_dict
 <     A dictionary storing all the Getopt#Filetype objects in the class.
       Exists mainly for namespacing reasons.
 
@@ -176,7 +176,7 @@ Methods: >
       Arguments: None
 >
          .SetFt
-<     Add the given Filetype object to the .filetypes dictionary
+<     Add the given Filetype object to the .ft_dict dictionary
       Arguments: a filetype and a Filetype object
 >
          .GetFt
@@ -184,14 +184,14 @@ Methods: >
       Arguments: a filetype
 >
          .CheckFt
-<     Return whether or not a filetype object exists in the .filetypes dict.
+<     Return whether or not a filetype object exists in the .ft_dict dict.
       Arguments: a filetype
 
 ==============================================================================
-3. Filetype plugins                                *Getopt-internal-filetype*
+3. Filetype modules                                *Getopt_internal_filetype*
                                                    *Getopt#{&ft}#ft*
 
-The filetype plugins are subclasses of |Getopt#Filetype|. Their .New methods
+The filetype classes are subclasses of |Getopt#Filetype|. Their .New methods
 create and return an object of the class as normal, but this object is
 immediately appended to the Filetype object.
 
@@ -209,26 +209,127 @@ Methods: >
 <     are all as described in |Getopt-internal-classes|.
 
 ==============================================================================
-4. Tests                                           *Getopt-internal-tests*
+4. Tests                                           *Getopt_internal_tests*
 
 Unit tests are run from t/, and are based on the |VimTAP| plugin.
 
 ------------------------------------------------------------------------------
 Getopt#Test
 
-Use the testing filetype autoload Getopt#t#ft to test the tests of the
-filetype autoloads. 
-Getopt#{&ft}#ft
+Getopt#Test (as above) tests the validity of a filetype class. Run the
+function on t/autoload/Getopt/t.vim under various flag combinations to ensure
+it matches the desired output.
 
-These are sort of meta-tests. The filetype plugins are prerequisites for the
-other tests, so these tests will ensure they are consistent.
+The filetype class for testing has three flags:
+>
+         g:Getopt_var_flags (max 3)
+         g:Getopt_func_flags (max 7)
+         g:Getopt_func_opt_flag (max 15)
+<
+Getopt::Test should return a failing result if the following bits are unset:
+>
+         g:Getopt_var_flags: 1
+         g:Getopt_func_flags: 5
+         g:Getopt_func_opt_flag: 13
 
-- 
+Test: each value of each flag
+Test: a few (dozen? hundred? depends on how much processing it takes)
+      randomly-selected combinations of flags (requires ruby support)
+
+There is one extra configuration variable >
+         g:Getopt_write_output
+< which is an integer setting the output type of .Write() to a string (1), list
+(2), hash (3), or nothing (4).
+
+Test: that string and list output pass, and other types fail
+
+Note: to use VimTAP for both Getopt#Test and t/ tests, reassign the global
+test harness, then instantiate a new VimTAP object under the global harness:
+>
+         " t/ tests ...
+         let outer_harness = vimtap#TheHarness
+         let vimtap#TheHarness = vimtap#StandardHarness.New('')
+         " Getopt#Test ...
+         call vimtap#FlushOutput()
+         let vimtap#TheHarness = vimtap#OuterHarness
+         " continue t/ tests ...
+<
+Note: I can generate a random number with the following:
+>
+         function! Rand(max)
+            ruby << EOF
+               rmax = VIM::evaluate("a:max")
+               rmax = nil if rmax == ""
+               VIM::command( "let random = " + rand(rmax).to_s )
+            EOF
+            return random
+         endfunction
+<
+
+-------------------------------------------------------------------------------
+Getopt#Saved (done)
+
+Test: .Init() runs without exception
+Test: .Init() empties .ft_dict
+
+Test: .SetFt() passes hashes
+Test: .SetFt() fails non-hashes
+
+Test: .CheckFt(), .GetFt() return expected values
+
+-------------------------------------------------------------------------------
+Getopt#Filetype (done)
+
+Test: .New() returns a new Getopt#Filetype object
+Test: .New() throws exception if filetype class doesn't exist
+Test: .New() throws exception on unset ft.opt_keys
+
+Test: .Init() resets all member variables
+
+Test: .Save() resets ft.opt_data and ft.global_data
+Test: .Save() adds (or overwrites) Saved.ft_dict.ft
+
+Test: .HasData() returns true if data has been entered into ft.opt_data and
+      (if appropriate) ft.global_data
+
+Test: .SetInputList() sets Filetype.input
+Test: .SetInputList() throws exception if argument is not a list
+
+-------------------------------------------------------------------------------
+Getopt#_Rename_for_input (done)
+
+Test: a variety of key names with known results
+
+-------------------------------------------------------------------------------
+Getopt#_Get_input (done)
+
+Test: throws exception if opt_keys is not defined
+
+Test: passes valid per-opt data 
+Test: ignores invalid per-opt data
+Test: passes valid global data
+Test: throws exception on invalid global data
+
+-------------------------------------------------------------------------------
+Getopt#Run
+
+Test: aborts cleanly on unknown filetype
+Note: from current t/filetype.vim
+
+Test: uses saved ft object if it exists
+Test: uses new ft object if it doesn't
+Test: aborts cleanly if ft.opt_keys is undefined
+Test: aborts cleanly if no data is entered
+Note: broadly from current t/data.vim
+
+Test: a number of complete calls
+Note: from current t/filetype.vim
 
 ==============================================================================
-5. Bugs (and todo list)                            *Getopt-bugs*
+5. Bugs (and todo list)                            *Getopt_bugs*
 
 - should set defaults in get_input() to the options entered in the last run
 - allow filetype modules to define valid and invalid input for tests
+- in autoload/Getopt/t.vim, set flags as parameters to .New()
 
-vim:tw=78:ft=help:norl:
+vim:tw=78:ft=help:norl:nospell
