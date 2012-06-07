@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Apr 27
+" Last Changed:  2012 Jun 07
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt
@@ -13,7 +13,7 @@ let loaded_Getopt = 1
 
 " Define the command
 if !exists( ":Getopt" )
-   command -nargs=0 Getopt echo Getopt#Run()
+   command -nargs=0 Getopt call Getopt#Run()
 endif
 
 if !exists( ":Getopttest" )

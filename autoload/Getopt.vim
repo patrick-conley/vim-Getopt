@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 05
+" Last Changed:  2012 Jun 07
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt and Getopt-internal.txt
@@ -18,7 +18,7 @@ set cpo&vim
 
 let Getopt#Filetype = {}
 
-" .New {{{3
+" Method: .New( [ $ft ] ) {{{3
 function Getopt#Filetype.New(...) dict
    let filetype = a:0 == 1 ? a:1 : &ft
 
@@ -40,7 +40,7 @@ function Getopt#Filetype.New(...) dict
    return harness
 endfunc
 
-" .Init {{{3
+" Method: .Init( %Ft_obj ) {{{3
 function Getopt#Filetype.Init( self ) dict
    let a:self.global_keys = []
    let a:self.opt_keys = []
@@ -51,7 +51,7 @@ function Getopt#Filetype.Init( self ) dict
    let a:self.last_data = []
 endfunc
 
-" .Save {{{3
+" Method: .Save() {{{3
 function Getopt#Filetype.Save() dict
    if ( ! empty( self.global_data ) || ! empty( self.opt_data ) )
       let self.last_global = self.global_data
@@ -64,7 +64,7 @@ function Getopt#Filetype.Save() dict
    endif
 endfunc
 
-" .HasData {{{3
+" Method: .HasData() {{{3
 function Getopt#Filetype.HasData() dict
    if empty( self.opt_data )
       return 0
@@ -75,7 +75,7 @@ function Getopt#Filetype.HasData() dict
    return 1
 endfunc
 
-" .SetInputList {{{3
+" Method: .SetInputList( @input ) {{{3
 function Getopt#Filetype.SetInputList( input ) dict
 
    " Validate the list
@@ -87,27 +87,27 @@ function Getopt#Filetype.SetInputList( input ) dict
    let self.input = a:input
 endfunc
 
-" .Validate {{{3
+" Method: .Validate( %data_hash ) {{{3
 " See autoload/Getopt/{ft}.vim
 
 
-" .Validate_global {{{3
+" Method: .Validate_global( %data_hash ) {{{3
 " See autoload/Getopt/{ft}.vim
 
 
-" .Write {{{3
+" Method: .Write() {{{3
 " See autoload/Getopt/{ft}.vim
 
 " }}}3
 
 " Getopt#Saved {{{2
 " Description: A static class meant to store previously-run Getopt#Filetypes
-" to allow the reuse of a filetype's data. Access is provided through a single
-" get/set pair
+" to allow the reuse of a filetype's data. Access is provided through
+" get/set/check functions
 
 let Getopt#Saved = {}
 
-" .Init {{{3
+" Method: .Init() {{{3
 " Note: although only one object of this class should exist, this method
 " deliberately fails to check if the data has already been set, as I may need
 " to reset the class to a blank state
@@ -115,7 +115,7 @@ function Getopt#Saved.Init() dict
    let self.ft_dict = {}
 endfunc
 
-" .SetFt {{{3
+" Method: .SetFt( $ft, %ft_obj ) {{{3
 function Getopt#Saved.SetFt( ft, obj ) dict
 
    " Only allow hashes to be added
@@ -129,7 +129,7 @@ function Getopt#Saved.SetFt( ft, obj ) dict
    let self.ft_dict[a:ft] = a:obj
 endfunc
 
-" GetFt {{{3
+" Method: GetFt( $ft ) {{{3
 function Getopt#Saved.GetFt( ft ) dict
    if self.CheckFt( a:ft )
       return self.ft_dict[a:ft]
@@ -138,7 +138,7 @@ function Getopt#Saved.GetFt( ft ) dict
    endif
 endfunc
 
-" CheckFt {{{3
+" Method: CheckFt( $ft ) {{{3
 function Getopt#Saved.CheckFt( ft ) dict
    return has_key( self.ft_dict, a:ft )
 endfunc
@@ -150,10 +150,12 @@ call g:Getopt#Saved.Init()
 " }}}1
 
 " FUNCTIONS {{{1
-" Function:  Run {{{2
+" Function:  Run( [ @input ] ) {{{2
 " Purpose:   Parse input, run the language-specific functions
-" Arguments: Non-interactive input (for test cases)
-" Return:    Error messages (as appropriate)
+" Arguments: Non-interactive input (for test cases). See
+"            Getopt#Filetype.SetInputList( [...] )
+" Return:    Exception messages for standard aborts. Otherwise-uncaught
+"            exceptions are echoed
 function Getopt#Run(...)
 
    try
@@ -191,23 +193,24 @@ function Getopt#Run(...)
 
       call buffer_ft.Save()
 
-   " No ft autoload found
-   catch E117
-      return "No autoload/Getopt/" . &ft . ".vim exists. Nothing to do."
+   " Catch: No ft module found
+   catch /E117/
+      let message = "No autoload/Getopt/" . &ft . ".vim exists. Nothing to do."
+      echom message
+      return message
 
-   " mild abort
+   " Catch: User errors
    catch /Nothing to do/
+      echom v:exception
       return v:exception
 
-   " serious abort
-   catch /^Getopt\(#.*\)\?: /
-      echohl Error | echo v:exception | echohl None
-
+   " Uncaught: internal errors
+ "    catch /^Getopt\(#.*\)\?: /
    endtry
 
 endfunc
 
-" Function:  _Get_input {{{2
+" Function:  _Get_input( %ft_obj ) {{{2
 " Purpose:   Ask the user to input each global and individual option, then
 "            validate it. If the 'input' list of options is given, this is
 "            used instead of user input
@@ -314,14 +317,14 @@ function Getopt#_Get_input( buffer_ft )
 
 endfunc
 
-" Function:  _Rename_for_input {{{2
+" Function:  _Rename_for_input( $key_name ) {{{2
 " Purpose:   Make some simple substitutions to variable names before display
 "            in input prompts
-"  Examples: arg -> arg
+" Examples:  arg -> arg
 "            the_thing -> the thing
 "            does_foo -> does foo?
-" Arguments: A single option name
-" Return:    The option name, possibly slightly modified
+" Arguments: A single key name
+" Return:    The name, possibly slightly modified
 function Getopt#_Rename_for_input( var )
    let var = a:var
 
@@ -337,7 +340,7 @@ function Getopt#_Rename_for_input( var )
    return var
 endfunc
 
-" Function:  Test {{{2
+" Function:  Test( $flag_interactive ) {{{2
 " Purpose:   Perform some basic tests of the filetype module of the current
 "            file. It should test that each of the functions exist, that
 "            function set appropriate Getopt members, return appropriate
@@ -530,7 +533,7 @@ function Getopt#Test( interactive )
 
 endfunc
 
-" Function:  _Test_data {{{2
+" Function:  _Test_data( @key_list ) {{{2
 " Purpose:   test that the argument is a list of hashes, each hash
 "            containing the keys 'name' and possibly 'default'
 " Arguments: opt_keys or global_keys
