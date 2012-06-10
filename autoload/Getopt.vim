@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 07
+" Last Changed:  2012 Jun 09
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt and Getopt-internal.txt
@@ -29,7 +29,7 @@ function Getopt#Filetype.New(...) dict
    try
       call extend( harness, g:Getopt#{filetype}#ft.New() )
    catch /E121/
-      throw "Getopt#Filetype: Filetype " . filetype . " undefined. Cannot create object"
+      throw "Getopt#Filetype: Filetype module " . filetype . " undefined. Cannot create object."
    endtry
 
    " Double-check opt_keys is set
@@ -164,7 +164,11 @@ function Getopt#Run(...)
       if ( g:Getopt#Saved.CheckFt( &ft ) )
          let buffer_ft = g:Getopt#Saved.GetFt( &ft )
       else
-         let buffer_ft = g:Getopt#Filetype.New()
+         try
+            let buffer_ft = g:Getopt#Filetype.New()
+         catch /^Getopt#Filetype/
+            throw v:exception . " Nothing to do."
+         endtry
       endif
 
       " Set the non-interactive input list if it exists (for unit tests only)
@@ -193,14 +197,8 @@ function Getopt#Run(...)
 
       call buffer_ft.Save()
 
-   " Catch: No ft module found
-   catch /E117/
-      let message = "No autoload/Getopt/" . &ft . ".vim exists. Nothing to do."
-      echom message
-      return message
-
    " Catch: User errors
-   catch /Nothing to do/
+   catch /\(Nothing to do\|Can't continue\)/
       echom v:exception
       return v:exception
 
@@ -224,7 +222,9 @@ function Getopt#_Get_input( buffer_ft )
    endif
 
    " Data may be entered non-interactively through the .input list
-   if ( has_key( a:buffer_ft, "input" ) && empty( a:buffer_ft.input ) || type( a:buffer_ft.input ) != type( [] ) )
+   
+   if ( has_key( a:buffer_ft, "input" ) && 
+            \ type( a:buffer_ft['input'] ) != type( [] ) )
       throw "Getopt: Invalid non-interactive input"
    endif
 
