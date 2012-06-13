@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 05
+" Last Changed:  2012 Jun 12
 " License:       This module (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt
@@ -147,32 +147,32 @@ function Getopt#t#ft.Write() dict " {{{1
 
       " Globals (if set)
       if and( g:Getopt_var_flags, 2 )
-         if empty( self.global_opts['global_nodef1'] )
+         if empty( self.global_data['global_nodef1'] )
             let output += [ "global_nodef1: UNSET" ]
          else
             let output += [ "global_nodef1: "
-                     \ . self.global_opts['global_nodef1'] ]
+                     \ . self.global_data['global_nodef1'] ]
          endif
 
          let output += [ "global_nodef2: "
-                  \ . self.global_opts['global_nodef2'] ]
-         let output += [ "global_def: " . self.global_opts['global_def'] ]
+                  \ . self.global_data['global_nodef2'] ]
+         let output += [ "global_def: " . self.global_data['global_def'] ]
       else
          let output += [ "NO GLOBALS" ]
       endif
 
       " All locals
-      if ! empty( self.opts )
-         for thisopt in self.opts
+      if ! empty( self.opt_data )
+         for opt_data_item in self.opt_data
 
-            if empty( thisopt['local_nodef1'] )
+            if empty( opt_data_item['local_nodef1'] )
                let output += [ "local_nodef1: UNSET" ]
             else
-               let output += [ "local_nodef1: " . thisopt['local_nodef1'] ]
+               let output += [ "local_nodef1: " . opt_data_item['local_nodef1'] ]
             endif
 
-            let output += [ "local_nodef2: " . thisopt['local_nodef2'] ]
-            let output += [ "local_def: " . thisopt['local_def'] ]
+            let output += [ "local_nodef2: " . opt_data_item['local_nodef2'] ]
+            let output += [ "local_def: " . opt_data_item['local_def'] ]
          endfor
       else
          let output += [ "NO LOCALS" ]

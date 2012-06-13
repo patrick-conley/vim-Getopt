@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 May 20
+" Last Changed:  2012 Jun 10
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt-internal.txt
@@ -48,6 +48,7 @@ let test_ft.global_keys = [ 'foo', 'bar' ]
 
 " .Init runs
 call vimtap_except#Lives( "call g:test_ft.Init( g:test_ft )", "Filetype.Init() runs" )
+
 " .Init resets members
 call vimtap#Is( test_ft.global_keys, [], 
          \ "Filetype.Init() resets member variables" )

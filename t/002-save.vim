@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 04
+" Last Changed:  2012 Jun 10
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt-internal.txt
@@ -19,7 +19,7 @@ silent echo Getopt#Filetype
 
 call vimtap#Plan(16)
 
-" Getopt#Saved {{{1
+" Getopt#Saved (x12) {{{1
 " Getopt#Saved.SetFt() (x6) {{{2
 let test_ft = Getopt#Filetype.New()
 
@@ -70,7 +70,7 @@ call vimtap#Is( Getopt#Saved.GetFt( 'foo' ), test_ft,
          \ "Saved.GetFt() succeeds (true result)" )
 call vimtap#Is( Getopt#Saved.GetFt( 'bar' ), 0,
          \ "Saved.GetFt() fails (false result)" )
-" Getopt#Filetype {{{1
+" Getopt#Filetype (x4) {{{1
 " Getopt#Filetype.Save() (x4) {{{2
 
 let Getopt#Saved.ft_dict.t = {}

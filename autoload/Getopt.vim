@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 09
+" Last Changed:  2012 Jun 12
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt and Getopt-internal.txt
@@ -19,6 +19,15 @@ set cpo&vim
 let Getopt#Filetype = {}
 
 " Method: .New( [ $ft ] ) {{{3
+" Purpose: Create a new Filetype object
+" Arguments: optional name of ft to create an object for
+" Assumptions: N/A
+" Validation: 
+"  - FT module must exist
+"  - FT module must contain appropriate keys:
+"    - non-empty hash opt_keys & function Validate()
+"    - function Validate_global() if non-empty hash global_keys
+"    - function Write()
 function Getopt#Filetype.New(...) dict
    let filetype = a:0 == 1 ? a:1 : &ft
 
@@ -29,18 +38,24 @@ function Getopt#Filetype.New(...) dict
    try
       call extend( harness, g:Getopt#{filetype}#ft.New() )
    catch /E121/
-      throw "Getopt#Filetype: Filetype module " . filetype . " undefined. Cannot create object."
+      throw "Getopt#Filetype: Filetype module " . filetype . " undefined."
    endtry
 
    " Double-check opt_keys is set
    if empty( harness.opt_keys )
-      throw "Getopt#Filetype: opt_keys not set by Getopt#" . &ft . "#ft.New()"
+      throw "Getopt#Filetype: opt_keys not set by Getopt#" . filetype . "#ft.New()"
    endif
 
    return harness
 endfunc
 
 " Method: .Init( %Ft_obj ) {{{3
+" Purpose: Initialize the member variables of a new Filetype object
+" Arguments: The FT object to be initialized
+" Assumptions: 
+"  - the type of each member has not been changed (could only occur if this
+"  has been re-called on an existing object)
+" Validation: N/A
 function Getopt#Filetype.Init( self ) dict
    let a:self.global_keys = []
    let a:self.opt_keys = []
@@ -52,6 +67,9 @@ function Getopt#Filetype.Init( self ) dict
 endfunc
 
 " Method: .Save() {{{3
+" Purpose: Copy self to the hash of saved FT objects in Getopt#Saved
+" Assumptions: N/A
+" Validation: N/A
 function Getopt#Filetype.Save() dict
    if ( ! empty( self.global_data ) || ! empty( self.opt_data ) )
       let self.last_global = self.global_data
@@ -65,6 +83,10 @@ function Getopt#Filetype.Save() dict
 endfunc
 
 " Method: .HasData() {{{3
+" Purpose: Check whether opt_data or global_data is non-empty
+" Assumptions:
+"  - none of the members have been completely deleted
+" Validation: N/A
 function Getopt#Filetype.HasData() dict
    if empty( self.opt_data )
       return 0
@@ -76,6 +98,12 @@ function Getopt#Filetype.HasData() dict
 endfunc
 
 " Method: .SetInputList( @input ) {{{3
+" Purpose: Assign a list of input to be used in a non-interactive mode by
+"          Getopt#_Get_input()
+" Assumptions: N/A
+" Validation:
+"  - argument is a list
+"  - len(input) = len(global_keys)+n*len(opt_keys) for some n
 function Getopt#Filetype.SetInputList( input ) dict
 
    " Validate the list
@@ -108,6 +136,9 @@ endfunc
 let Getopt#Saved = {}
 
 " Method: .Init() {{{3
+" Purpose: (Re)initialize the member variable of Getopt#Saved
+" Assumptions: N/A
+" Validation: N/A
 " Note: although only one object of this class should exist, this method
 " deliberately fails to check if the data has already been set, as I may need
 " to reset the class to a blank state
@@ -116,6 +147,15 @@ function Getopt#Saved.Init() dict
 endfunc
 
 " Method: .SetFt( $ft, %ft_obj ) {{{3
+" Purpose: Copy the FT object parameter to the appropriate key of the ft_dict
+"          member
+" Arguments:
+"  - string filetype
+"  - FT object
+" Assumptions: 
+"  - first argument is a string
+" Validation:
+"  - second argument is a Filetype object
 function Getopt#Saved.SetFt( ft, obj ) dict
 
    " Only allow hashes to be added
@@ -130,6 +170,11 @@ function Getopt#Saved.SetFt( ft, obj ) dict
 endfunc
 
 " Method: GetFt( $ft ) {{{3
+" Purpose: Return the FT object for a given filetype
+" Arguments: string filetype
+" Assumptions:
+"  - the argument is a legal string
+" Validation: N/A
 function Getopt#Saved.GetFt( ft ) dict
    if self.CheckFt( a:ft )
       return self.ft_dict[a:ft]
@@ -139,6 +184,11 @@ function Getopt#Saved.GetFt( ft ) dict
 endfunc
 
 " Method: CheckFt( $ft ) {{{3
+" Purpose: Check if ft_dict contains an object for the given filetype
+" Arguments: string filetype
+" Assumptions:
+"  - the argument is a valid string
+" Validation: N/A
 function Getopt#Saved.CheckFt( ft ) dict
    return has_key( self.ft_dict, a:ft )
 endfunc
@@ -152,8 +202,14 @@ call g:Getopt#Saved.Init()
 " FUNCTIONS {{{1
 " Function:  Run( [ @input ] ) {{{2
 " Purpose:   Parse input, run the language-specific functions
-" Arguments: Non-interactive input (for test cases). See
-"            Getopt#Filetype.SetInputList( [...] )
+" Arguments: 
+"  - Non-interactive input (for test cases). 
+"    See Getopt#Filetype.SetInputList( [...] )
+"    Assumptions: 
+"    - N/A
+"    Validation:
+"    - input must be correct
+"    ...
 " Return:    Exception messages for standard aborts. Otherwise-uncaught
 "            exceptions are echoed
 function Getopt#Run(...)
@@ -164,11 +220,7 @@ function Getopt#Run(...)
       if ( g:Getopt#Saved.CheckFt( &ft ) )
          let buffer_ft = g:Getopt#Saved.GetFt( &ft )
       else
-         try
-            let buffer_ft = g:Getopt#Filetype.New()
-         catch /^Getopt#Filetype/
-            throw v:exception . " Nothing to do."
-         endtry
+         let buffer_ft = g:Getopt#Filetype.New()
       endif
 
       " Set the non-interactive input list if it exists (for unit tests only)
@@ -180,7 +232,7 @@ function Getopt#Run(...)
       call Getopt#_Get_input( buffer_ft )
 
       if ! ( buffer_ft.HasData() )
-         throw "Getopt: No options entered. Nothing to do."
+         throw "Getopt: No options entered."
       endif
 
       " Set and print the option string
@@ -188,7 +240,9 @@ function Getopt#Run(...)
 
       if empty( optstr )
          throw "Getopt: optstr not set by .Write()"
-      elseif has_key( buffer_ft, "input" ) )
+      endif
+
+      if has_key( buffer_ft, "input" )
          return optstr
       else
          call append( ".", optstr )
@@ -198,12 +252,11 @@ function Getopt#Run(...)
       call buffer_ft.Save()
 
    " Catch: User errors
-   catch /\(Nothing to do\|Can't continue\)/
-      echom v:exception
+   catch /^Getopt\(#[^ ]*\)\?: /
+      echom substitute( v:exception, "^Getopt\(#[^ ]*\)\?: ", "", "" )
       return v:exception
 
    " Uncaught: internal errors
- "    catch /^Getopt\(#.*\)\?: /
    endtry
 
 endfunc
@@ -212,20 +265,23 @@ endfunc
 " Purpose:   Ask the user to input each global and individual option, then
 "            validate it. If the 'input' list of options is given, this is
 "            used instead of user input
-" Arguments: a Getopt#Filetype object
+" Arguments: 
+"  - A Getopt#Filetype object
+"    Assumptions:
+"    - opt_keys and Validate() are defined; that keys tested by Validate() are
+"      a subset of opt_keys
+"    - Validate() is set if global_keys is
+"    - non-interactive input is an integer multiple of len(opt_keys) (plus
+"      len(global_keys) as appropriate)
+"    Validation:
+"    - opt_keys and global_keys must be valid (each contains a .name)
+"    - opt_data and global_data must be empty
 " Return:    N/A. Filetype object is modified in-place
 function Getopt#_Get_input( buffer_ft )
 
    " Make sure there aren't leftovers from the last run!
    if ( !empty( a:buffer_ft.opt_data ) || !empty( a:buffer_ft.global_data ) )
       throw "Getopt: Unclean Filetype object passed to _Get_input()"
-   endif
-
-   " Data may be entered non-interactively through the .input list
-   
-   if ( has_key( a:buffer_ft, "input" ) && 
-            \ type( a:buffer_ft['input'] ) != type( [] ) )
-      throw "Getopt: Invalid non-interactive input"
    endif
 
    try
@@ -265,19 +321,9 @@ function Getopt#_Get_input( buffer_ft )
 
       " Enter settings for each option {{{3
 
-      if empty( a:buffer_ft.opt_keys )
-         throw "Getopt: No option information is defined. Nothing to do"
-      endif
-
       echo "Per-option data:"
       echo "Press ^C to finish"
       while (1)
-
-         " Non-interactive input can only safely be empty at the start of an
-         " option line
-         if ( has_key( a:buffer_ft, "input" ) && empty( a:buffer_ft.input ) )
-            break
-         endif
 
          let opt_input = {}
          for this in a:buffer_ft.opt_keys
@@ -301,7 +347,7 @@ function Getopt#_Get_input( buffer_ft )
          " Validate input
          if a:buffer_ft.Validate( opt_input )
             let a:buffer_ft.opt_data += [ opt_input ]
-            echo "Option recorded"
+            echomsg "Option recorded"
          else
             echomsg "Invalid option ignored"
          endif
@@ -310,7 +356,7 @@ function Getopt#_Get_input( buffer_ft )
 
       " }}}3
 
-   catch /^\(Vim:Interrupt\|E684\)/
+   catch /\(^Vim:Interrupt\|E684\)/
       " Valid end of input
    " other exceptions escalate to Getopt#Run
    endtry
@@ -323,7 +369,12 @@ endfunc
 " Examples:  arg -> arg
 "            the_thing -> the thing
 "            does_foo -> does foo?
-" Arguments: A single key name
+" Arguments: 
+"  - A single key name
+"    Assumptions:
+"    - name is a string
+"    Validation:
+"    - N/A
 " Return:    The name, possibly slightly modified
 function Getopt#_Rename_for_input( var )
    let var = a:var

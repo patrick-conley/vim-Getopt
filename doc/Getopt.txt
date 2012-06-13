@@ -1,7 +1,7 @@
 *Getopt.txt*   Write option-parsing code
 
 Author: Patrick Conley <patrick.bj.conley@gmail.com>
-Last change: 2012 Jun 03
+Last change: 2012 Jun 07
 
 1. Using Getopt                  |Getopt|
 2. Use examples                  |Getopt_examples|
@@ -23,7 +23,7 @@ configurable setting.
             stop input at any point.
 
             See help files on Getopt_<filetype> for details on the data used
-            by each filetype's module
+            by each filetype's module.
 
 :Getopttest runs a short series of tests on the filetype functions for the
             current file. Validation is necessarily incomplete, as I can't
@@ -118,7 +118,7 @@ named 'Getopt_<filetype>' for consistency.
 ------------------------------------------------------------------------------
 New()                                              *Getopt_write_new*
 
-The .New() method must return a copy of itself with the internal variables
+The ft.New() method must return a copy of itself with the internal variables
 self.opt_keys and (optionally) self.global_keys set.
 
 'opt_keys' is a list of hashes containing the data recognized in an option for
@@ -146,9 +146,9 @@ Mine look something like:
 ------------------------------------------------------------------------------
 Validate() and Validate_global()                   *Getopt_write_validate*
 
-Validate should take as input a hash containing input data for a single option.
-and return either true or false (obviously, depending on whether appropriate
-information has been entered).
+ft.Validate() should take as input a hash containing input data for a single
+option and return either true or false (obviously depending on whether
+appropriate information has been entered).
 >
       function Getopt#c#ft.Validate(D) dict " validate C opt data
          " short_name and has_arg are required
@@ -167,13 +167,13 @@ information has been entered).
 
 <
 
-Global validation works similarly, but will only be called once.
+ft.Validate_global() works similarly, but will only be called once.
 
 ------------------------------------------------------------------------------
 Write()                                            *Getopt_write_write*
 
 The last required function should use the data in the list 'self.opt_data' and
-the hash 'self..global_data' to create and return a string or list which will
+the hash 'self.global_data' to create and return a string or list which will
 be printed to the buffer. If it returns a list, each element will be printed
 on a separate line.
 
@@ -188,8 +188,8 @@ I won't bother to post sample code, as it's lengthy rather than interesting.
 >
       :Getopttest
 <
-This command runs a series of tests on the filetype functions for the file in
-the active buffer. The tests aren't meant to be comprehensive (because I don't
+This command runs a series of tests on the filetype module for the file in the
+active buffer. The tests aren't meant to be comprehensive (because I don't
 know what kind of data a given filetype will require), but should let you know
 if you've done something really stupid.
 
