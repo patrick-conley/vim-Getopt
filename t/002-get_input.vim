@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 11
+" Last Changed:  2012 Jun 14
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt-internal.txt
@@ -25,11 +25,13 @@ let test_ft = Getopt#Filetype.New()
 
 call vimtap_except#Lives( "call g:test_ft.SetInputList( [ 1, 2 ] )",
          \ "Filetype.SetInputList() runs" )
-
 call vimtap#Is( test_ft.input, [ 1, 2 ], "Filetype.SetInputList() sets .input" )
-call vimtap_except#Like( "call g:test_ft.SetInputList( '' )", "^Getopt#Filetype",
+
+call vimtap_except#Like( "call g:test_ft.SetInputList( '' )", 
+         \ "^Getopt#Filetype",
          \ "Filetype.SetInputList fails on non-list input (string)" )
-call vimtap_except#Like( "call g:test_ft.SetInputList( {} )", "^Getopt#Filetype",
+call vimtap_except#Like( "call g:test_ft.SetInputList( {} )", 
+         \ "^Getopt#Filetype",
          \ "Filetype.SetInputList fails on non-list input (hash)" )
 " Getopt (x21) {{{1
 " Getopt#_Get_input (x21) {{{2

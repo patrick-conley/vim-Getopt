@@ -3,7 +3,7 @@
                                                    *Getopt_internal*
 
 Author: Patrick Conley <patrick.bj.conley@gmail.com>
-Last change: 2012 Jun 09
+Last change: 2012 Jun 14
 
 1. Functions         |Getopt_internal_functions|
 2. Classes           |Getopt_internal_classes|
@@ -195,19 +195,58 @@ Methods: >
 
 Unit tests are run from t/, and are based on the |VimTAP| plugin.
 
+Getopt#t#ft
 ------------------------------------------------------------------------------
-Getopt#Test
 
-Getopt#Test tests the validity of a filetype class. Run the function on
-t/autoload/Getopt/t.vim under various flag combinations to ensure it matches
-the desired output.
+Tests are based on the filetype 't', whose module has a number of flags
+defined that change its behaviour. All flags are set to defaults that allow it
+to run successfully
 
-The filetype class for testing has three flags:
+There are three binary flags:
 >
-         g:Getopt_var_flags (max 3)
+         g:Getopt_var_flags (max 7)
          g:Getopt_func_flags (max 7)
          g:Getopt_func_opt_flag (max 15)
 <
+
+The bits of g:Getopt_var_flags control which internal variables are defined by
+ft.New():
+>
+         1: defines opt_keys
+         2: defines global_keys
+         4: defines input
+         default: 5
+<
+g:Getopt_func_flags controls which functions the filetype module defines:
+>
+         1: Validate()
+         2: Validate_global()
+         4: Write()
+         default: 5
+<
+g:Getopt_func_opt_flag controls whether each defined function is allowed to
+take more/fewer arguments than defined in |Getopt_write_filetype|. If a
+function is undefined, the corresponding bit of Getopt_func_opt_flag has no
+effect:
+>
+         1: New() requires no inputs
+         2: Validate_global() requires a single input
+         4: Validate() requires a single input
+         8: Write() requires no arguments
+         default: 15
+
+There is one extra configuration variable >
+         g:Getopt_write_output
+< which is an integer setting the output type of ft.Write() to a string (1),
+list (2), hash (3), or nothing (4).
+
+------------------------------------------------------------------------------
+Getopt#Test
+
+Getopt#Test tests the validity of a filetype module. Run the function on
+autoload/Getopt/t.vim under various flag combinations to ensure it matches the
+desired output.
+
 Getopt::Test should return a failing result if the following bits are unset:
 >
          g:Getopt_var_flags: 1
@@ -218,12 +257,7 @@ Test: each value of each flag
 Test: a few (dozen? hundred? depends on how much processing it takes)
       randomly-selected combinations of flags (requires ruby support)
 
-There is one extra configuration variable >
-         g:Getopt_write_output
-< which is an integer setting the output type of .Write() to a string (1), list
-(2), hash (3), or nothing (4).
-
-Test: that string and list output pass, and other types fail
+Test: that string and list Write() output pass, and other types fail
 
 Note: to use VimTAP for both Getopt#Test and t/ tests, reassign the global
 test harness, then instantiate a new VimTAP object under the global harness:

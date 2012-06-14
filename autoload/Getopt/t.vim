@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 12
+" Last Changed:  2012 Jun 14
 " License:       This module (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt
@@ -12,7 +12,8 @@
 "                g:Getopt_var_flags - controls which variables are defined:
 "                1: defines opt_keys
 "                2: defines global_keys
-"                default: 1
+"                4: defines input
+"                default: 5
 "
 "                g:Getopt_func_flags - controls which functions are defined:
 "                1: Validate()
@@ -41,15 +42,16 @@ let Getopt#t#ft = {}
 
 function Getopt#t#ft.New(...) dict " {{{1
 
-   " Declare default values of flags
+   " Declare default values of flags {{{2
    let g:Getopt_var_flags = 
-            \ exists("g:Getopt_var_flags") ? g:Getopt_var_flags : 1
+            \ exists("g:Getopt_var_flags") ? g:Getopt_var_flags : 5
    let g:Getopt_func_flags = 
             \ exists("g:Getopt_func_flags") ? g:Getopt_func_flags : 5
    let g:Getopt_func_opt_flag = 
             \ exists("g:Getopt_func_opt_flag") ? g:Getopt_func_opt_flag : 15
    let g:Getopt_write_output = 
             \ exists("g:Getopt_write_output") ? g:Getopt_write_output : 1
+   " }}}2
 
    " Check arguments
    if ( a:0 > 0 && and( g:Getopt_func_opt_flag, 1 ) )
@@ -58,7 +60,9 @@ function Getopt#t#ft.New(...) dict " {{{1
 
    let harness = copy( self )
 
-   " Declare variables (controlled by g:Getopt_var_flags)
+   " Declare variables (controlled by g:Getopt_var_flags) {{{2
+
+   " opt_keys
    if and( g:Getopt_var_flags, 1 )
       let harness.opt_keys = [ { 'name': 'local_nodef1' },
                           \ { 'name': 'local_nodef2' },
@@ -67,6 +71,7 @@ function Getopt#t#ft.New(...) dict " {{{1
       let harness.opt_keys = ''
    endif
 
+   " global_keys
    if and( g:Getopt_var_flags, 2 )
       let harness.global_keys = [ { 'name': 'global_nodef1' },
                              \ { 'name': 'global_nodef2' },
@@ -75,7 +80,21 @@ function Getopt#t#ft.New(...) dict " {{{1
       let harness.global_keys = ''
    endif
 
-   " Declare functions (controlled by g:Getopt_func_flags)
+   " input
+   if and( g:Getopt_var_flags, 4 )
+      let harness.input = []
+
+      if and( g:Getopt_var_flags, 2 )
+         let harness.input += [ 1, 1, 1 ]
+      endif
+
+      if and( g:Getopt_var_flags, 1 )
+         let harness.input += [ 1, 1, 1 ]
+      endif
+   endif
+
+
+   " Declare functions (controlled by g:Getopt_func_flags) {{{2
    if ! and( g:Getopt_func_flags, 1 )
       unlet harness.Validate
    endif
@@ -85,6 +104,8 @@ function Getopt#t#ft.New(...) dict " {{{1
    if ! and( g:Getopt_func_flags, 4 )
       unlet harness.Write
    endif
+
+   " }}}2
 
    return harness
 

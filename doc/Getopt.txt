@@ -1,11 +1,11 @@
 *Getopt.txt*   Write option-parsing code
 
 Author: Patrick Conley <patrick.bj.conley@gmail.com>
-Last change: 2012 Jun 07
+Last change: 2012 Jun 14
 
 1. Using Getopt                  |Getopt|
 2. Use examples                  |Getopt_examples|
-3. Writing filetype classes      |Getopt_filetype|
+3. Writing filetype classes      |Getopt_write_filetype|
 4. Testing filetype classes      |Getopt_test|
 
 ==============================================================================
