@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 12
+" Last Changed:  2012 Jun 20
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt and Getopt-internal.txt
@@ -20,33 +20,37 @@ let Getopt#Filetype = {}
 
 " Method: .New( [ $ft ] ) {{{3
 " Purpose: Create a new Filetype object
-" Arguments: optional name of ft to create an object for
+" Arguments: N/A
 " Assumptions: N/A
 " Validation: 
-"  - FT module must exist
+"  - FT module for current filetype must exist
 "  - FT module must contain appropriate keys:
 "    - non-empty hash opt_keys & function Validate()
 "    - function Validate_global() if non-empty hash global_keys
 "    - function Write()
-function Getopt#Filetype.New(...) dict
+function Getopt#Filetype.New() dict
    let filetype = a:0 == 1 ? a:1 : &ft
 
-   let harness = copy( self )
-   call self.Init( harness )
+   let new_ft = {}
+   let new_ft.Save = self.Save
+   let new_ft.HasData = self.HasData
+   let new_ft.SetInputList = self.SetInputList
+   call self.Init( new_ft )
 
    " Add the filetype functions to the object
    try
-      call extend( harness, g:Getopt#{filetype}#ft.New() )
+      call extend( new_ft, g:Getopt#{&ft}#ft.New() )
+      unlet new_ft.New " The FT object doesn't need the FT module's constructor
    catch /E121/
-      throw "Getopt#Filetype: Filetype module " . filetype . " undefined."
+      throw "Getopt#Filetype: Filetype module " . &ft . " undefined."
    endtry
 
    " Double-check opt_keys is set
-   if empty( harness.opt_keys )
-      throw "Getopt#Filetype: opt_keys not set by Getopt#" . filetype . "#ft.New()"
+   if empty( new_ft.opt_keys )
+      throw "Getopt#Filetype: opt_keys not set by Getopt#" . &ft . "#ft.New()"
    endif
 
-   return harness
+   return new_ft
 endfunc
 
 " Method: .Init( %Ft_obj ) {{{3
@@ -56,14 +60,57 @@ endfunc
 "  - the type of each member has not been changed (could only occur if this
 "  has been re-called on an existing object)
 " Validation: N/A
-function Getopt#Filetype.Init( self ) dict
-   let a:self.global_keys = []
-   let a:self.opt_keys = []
+function Getopt#Filetype.Init( new_ft ) dict
+   let a:new_ft.global_keys = []
+   let a:new_ft.opt_keys = []
 
-   let a:self.global_data = {}
-   let a:self.opt_data = []
-   let a:self.last_global = {}
-   let a:self.last_data = []
+   let a:new_ft.global_data = {}
+   let a:new_ft.opt_data = []
+   let a:new_ft.last_global = {}
+   let a:new_ft.last_data = []
+endfunc
+
+" Method: .Compare( %Ft_obj ) {{{3
+" Purpose: Check that the given object is a valid filetype object (contains
+" the appropriate keys and the keys are of appropriate types)
+" Arguments:
+"  - A dict to be compared
+"     Assumptions:
+"     - argument is a dict
+"     Validation:
+"     - N/A
+function Getopt#Filetype.Compare( obj ) dict
+
+   " members that should exist {{{4
+   let required_members = [ "Save", "HasData", "SetInputList", "Validate",
+            \ "Write", "opt_keys", "global_keys", "opt_data", "global_data",
+            \ "last_data", "last_global" ]
+   let required_types = [ 2, 2, 2, 2, 2, 3, 3, 3, 4, 3, 4 ]
+
+   let optional_members = [ "Validate_global", "input" ]
+   let optional_types = [ 2, 3 ]
+
+   " Test required member variables exist {{{4
+   for i in range( len( required_members ) )
+      if !exists( "a:obj." . required_members[i] )
+         return 0
+      endif
+   endfor
+
+   " Test all members have the right type {{{4
+   let all_members = extend( copy( required_members ), optional_members )
+   let all_types = extend( copy( required_types ), optional_types )
+
+   for i in range( len( all_members ) )
+      if exists( "a:obj." . all_members[i] ) &&
+               \ type( a:obj[all_members[i]] ) != all_types[i]
+         return 0
+      endif
+   endfor
+
+   " }}}4
+
+   return 1
 endfunc
 
 " Method: .Save() {{{3
@@ -159,10 +206,7 @@ endfunc
 function Getopt#Saved.SetFt( ft, obj ) dict
 
    " Only allow hashes to be added
-   if type( a:obj ) != type( {} )
-      throw "Getopt#Saved: input must be a Filetype object"
-   " Only allow hashes which are supersets of Getopt#Filetype to be added
-   elseif filter( copy( g:Getopt#Filetype ), '! has_key( a:obj, v:key )' ) != {}
+   if ! g:Getopt#Filetype.Compare( a:obj )
       throw "Getopt#Saved: input must be a Filetype object"
    endif
 

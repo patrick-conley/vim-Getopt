@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 14
+" Last Changed:  2012 Jun 20
 " License:       This module (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt
@@ -67,8 +67,6 @@ function Getopt#t#ft.New(...) dict " {{{1
       let harness.opt_keys = [ { 'name': 'local_nodef1' },
                           \ { 'name': 'local_nodef2' },
                           \ { 'name': 'local_def', 'default': 0 } ]
-   else
-      let harness.opt_keys = ''
    endif
 
    " global_keys
@@ -76,8 +74,6 @@ function Getopt#t#ft.New(...) dict " {{{1
       let harness.global_keys = [ { 'name': 'global_nodef1' },
                              \ { 'name': 'global_nodef2' },
                              \ { 'name': 'global_def', 'default': 1 } ]
-   else
-      let harness.global_keys = ''
    endif
 
    " input
