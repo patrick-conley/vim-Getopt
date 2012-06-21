@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 20
+" Last Changed:  2012 Jun 21
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt-internal.txt
@@ -14,10 +14,9 @@ call vimtap#Plan(12)
 " Getopt#Filetype.New() (x1) {{{2
 
 " fails on unset .opt_keys
-let g:Getopt_var_flags = 0
-call vimtap_except#Like( "call g:Getopt#Filetype.New()", "^Getopt#Filetype",
+call vimtap_except#Like( "call g:Getopt#Filetype.New( 0, -1, -1, -1 )", 
+         \ "^Getopt#Filetype",
          \ "Filetype.New() fails if ft plugin doesn't set .opt_keys" )
-let g:Getopt_var_flags = 1 
 
 " Getopt#Filetype.Compare() (x6) {{{2
 
@@ -36,14 +35,9 @@ call vimtap#Is( Getopt#Filetype.Compare( test_ft ), 1,
          \ "Filetype.Compare() returns correctly (true - FT object)" )
 
 " FT object with globals
-let g:Getopt_func_flags = 7
-let g:Getopt_var_flags = 7
-let test_ft = Getopt#Filetype.New()
+let test_ft = Getopt#Filetype.New( 7, 7, -1, -1 )
 call vimtap#Is( Getopt#Filetype.Compare( test_ft ), 1, 
          \ "Filetype.Compare() returns correctly (true - FT object with Validate_global)" )
-
-let g:Getopt_var_flags = 5
-let g:Getopt_func_flags = 5
 
 " FT object with an incorrectly-typed member
 unlet test_ft.Validate
@@ -67,8 +61,7 @@ let test_ft.opt_data = [ 1, 2 ]
 call vimtap#Is( test_ft.HasData(), 1,
          \ "Filetype.HasData() succeeds (opt_data defined)" )
 
-let g:Getopt_var_flags = 3
-let test_ft = Getopt#Filetype.New()
+let test_ft = Getopt#Filetype.New( 3, -1, -1, -1 )
 
 let test_ft.opt_data = [ 1, 2 ]
 call vimtap#Is( test_ft.HasData(), 0,

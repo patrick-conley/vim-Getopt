@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 20
+" Last Changed:  2012 Jun 21
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt and Getopt-internal.txt
@@ -18,18 +18,19 @@ set cpo&vim
 
 let Getopt#Filetype = {}
 
-" Method: .New( [ $ft ] ) {{{3
+" Method: .New( [ Getopt#t#ft flags ] ) {{{3
 " Purpose: Create a new Filetype object
-" Arguments: N/A
-" Assumptions: N/A
+" Arguments: 
+"  - Optional set of four integers setting flags to Getopt#t#ft
+"  Assumptions: N/A - will be passed unmodified to Getopt#t#ft.New()
+"
 " Validation: 
 "  - FT module for current filetype must exist
 "  - FT module must contain appropriate keys:
 "    - non-empty hash opt_keys & function Validate()
 "    - function Validate_global() if non-empty hash global_keys
 "    - function Write()
-function Getopt#Filetype.New() dict
-   let filetype = a:0 == 1 ? a:1 : &ft
+function Getopt#Filetype.New( ... ) dict
 
    let new_ft = {}
    let new_ft.Save = self.Save
@@ -39,7 +40,12 @@ function Getopt#Filetype.New() dict
 
    " Add the filetype functions to the object
    try
-      call extend( new_ft, g:Getopt#{&ft}#ft.New() )
+
+      if ( &ft == 't' && a:0 == 4 )
+         call extend( new_ft, g:Getopt#t#ft.New( a:1, a:2, a:3, a:4 ) )
+      else
+         call extend( new_ft, g:Getopt#{&ft}#ft.New() )
+      endif
       unlet new_ft.New " The FT object doesn't need the FT module's constructor
    catch /E121/
       throw "Getopt#Filetype: Filetype module " . &ft . " undefined."

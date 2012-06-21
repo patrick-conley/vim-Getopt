@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 14
+" Last Changed:  2012 Jun 21
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt-internal.txt
@@ -121,9 +121,7 @@ call vimtap#Is( test_ft.opt_data, result,
 let test_ft = Getopt#Filetype.New()
 
 " _Get_input passes valid global data (x2) {{{3
-let g:Getopt_var_flags = 3
-let g:Getopt_func_flags = 3
-let test_ft = Getopt#Filetype.New()
+let test_ft = Getopt#Filetype.New( 7, 7, -1, -1 )
 
 call test_ft.SetInputList( [ '', 1, 1,  '', 1, 1 ] )
 
@@ -133,17 +131,16 @@ let result = { 'global_nodef1': '', 'global_nodef2': 1, 'global_def': 1 }
 call vimtap_except#Lives( test_call, "_Get_input() passes valid global input" )
 call vimtap#Is( test_ft.global_data, result, 
          \ "_Get_input sets valid global input" )
-let test_ft = Getopt#Filetype.New()
 
 " _Get_input fails invalid global data (x1) {{{3
+call test_ft.Save()
 call test_ft.SetInputList( [ '', '', 1 ] )
 
 call vimtap_except#Is( test_call, "Getopt: Invalid global data entered",
          \ "_Get_input() fails invalid global input" )
 
 " _Get_input does not fail if no per-opt data is entered (x2) {{{3
-let g:Getopt_var_flags = 1
-let test_ft = Getopt#Filetype.New()
+let test_ft = Getopt#Filetype.New( 1, -1, -1, -1 )
 
 call test_ft.SetInputList( [] )
 
@@ -153,9 +150,7 @@ call vimtap#Is( test_ft.opt_data, [],
          \ "_Get_input sets opt_data if no input is given (per-opt)" )
 
 " _Get_input does not fail if no global/per-opt data is entered (x3) {{{3
-let g:Getopt_var_flags = 3
-let g:Getopt_func_flags = 3
-let test_ft = Getopt#Filetype.New()
+let test_ft = Getopt#Filetype.New( 7, 7, -1, -1 )
 
 call test_ft.SetInputList( [] )
 

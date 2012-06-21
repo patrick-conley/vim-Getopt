@@ -3,7 +3,7 @@
                                                    *Getopt_internal*
 
 Author: Patrick Conley <patrick.bj.conley@gmail.com>
-Last change: 2012 Jun 14
+Last change: 2012 Jun 21
 
 1. Functions         |Getopt_internal_functions|
 2. Classes           |Getopt_internal_classes|
@@ -100,7 +100,8 @@ Methods: >
 <     Create a new Getopt#Filetype object, call .Init and the filetype's
       autoload file, and return the object.
       See vimtap.
-      Arguments: None
+      Arguments: None (If the filetype is 't', used for testing, it takes the
+      four flags described in |Getopt_internal_tests|.)
 >
          .Init()
 <     Set initial/default values for all the data.
@@ -239,6 +240,11 @@ There is one extra configuration variable >
          g:Getopt_write_output
 < which is an integer setting the output type of ft.Write() to a string (1),
 list (2), hash (3), or nothing (4).
+
+If the flags are set through these variables they will act persistently. If
+they are instead passed as arguments to Getopt#Filetype.New or
+Getopt#t#ft.New(), they will only act on that instantiation. If a flag is set
+to less than zero in the function parameters, its default will be used.
 
 ------------------------------------------------------------------------------
 Getopt#Test
