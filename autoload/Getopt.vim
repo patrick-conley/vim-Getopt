@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 21
+" Last Changed:  2012 Jun 22
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt and Getopt-internal.txt
@@ -338,27 +338,11 @@ function Getopt#_Get_input( buffer_ft )
       " Enter global option settings {{{3
       if ! empty( a:buffer_ft.global_keys )
 
-         let global_input = {}
-
          echo "Single-use data:"
 
-         for this in a:buffer_ft.global_keys
-            let global_input[this.name] = ''
-
-            " Read non-interactive input
-            if has_key( a:buffer_ft, "input" )
-               let global_input[this.name] = remove( a:buffer_ft.input, 0 )
-
-            " Read interactive input, possibly with a default arg
-            elseif has_key( this, "default" )
-               let global_input[this.name]
-                        \ = input( Getopt#_Rename_for_input(this.name) . ' > ', 
-                                 \ this.default )
-            else
-               let global_input[this.name]
-                        \ = input( Getopt#_Rename_for_input(this.name) . ' > ' )
-            endif
-         endfor
+         let global_input = has_key( a:buffer_ft, "input" ) 
+                  \ ? Getopt#_Read_data( a:buffer_ft.global_keys, a:buffer_ft.input )
+                  \ : Getopt#_Read_data( a:buffer_ft.global_keys )
 
          " Validate input
          if a:buffer_ft.Validate_global( global_input )
@@ -375,24 +359,10 @@ function Getopt#_Get_input( buffer_ft )
       echo "Press ^C to finish"
       while (1)
 
-         let opt_input = {}
-         for this in a:buffer_ft.opt_keys
-            let opt_input[this.name] = ''
+         let opt_input = has_key( a:buffer_ft, "input" ) 
+                  \ ? Getopt#_Read_data( a:buffer_ft.opt_keys, a:buffer_ft.input )
+                  \ : Getopt#_Read_data( a:buffer_ft.opt_keys )
 
-            " Read non-interactive input
-            if has_key( a:buffer_ft, "input" )
-               let opt_input[this.name] = remove( a:buffer_ft.input, 0 )
-
-            " Read interactive input, possibly with a default arg
-            elseif has_key( this, "default" )
-               let opt_input[this.name]
-                        \ = input( Getopt#_Rename_for_input(this.name) . ' > ', 
-                                 \ this.default )
-            else
-               let opt_input[this.name]
-                        \ = input( Getopt#_Rename_for_input(this.name) . ' > ' )
-            endif
-         endfor
 
          " Validate input
          if a:buffer_ft.Validate( opt_input )
@@ -412,6 +382,48 @@ function Getopt#_Get_input( buffer_ft )
    endtry
 
 endfunc
+
+" Function:  _Read_data( @key_list [, @input_list ] ) {{{2
+" Purpose:   Read unvalidated input from stdin according to the name/default
+"            of the keys given to complete a single option. Non-interactive
+"            input from @input_list is read and removed from the list, if
+"            available.
+" Arguments:
+"  - @key_list: a list of keys to get data for
+"    Assumptions:
+"    - list is non-empty
+"    - all keys have a 'name' field
+"    Validation: N/A
+"  - @input_list: list of non-interactive input to read in place of stdin. The
+"    first n elements are removed from the list in the process, where n is the
+"    number of keys in @key_list
+"    Assumptions:
+"    - list contents are valid (ie, it passed the checks in SetInputList()
+"    Validation: N/A
+" Return:    Hash of key-data pairs to be validated and added to the FT object
+function Getopt#_Read_data( key_list, ... )
+
+   let in_data = {}
+
+   for this in a:key_list
+      let in_data[this.name] = has_key( this, "default" ) ? this.default : ''
+
+      " Read non-interactive input
+      if a:0 > 0
+         let in_data[this.name] = remove( a:1, 0 )
+         
+      " Read interactive input, possibly with a default arg
+      else
+         let in_data[this.name] = 
+                  \ input( Getopt#_Rename_for_input(this.name) . ' > ',
+                  \ in_data[this.name] )
+      endif
+   endfor
+
+   return in_data
+
+endfunc
+
 
 " Function:  _Rename_for_input( $key_name ) {{{2
 " Purpose:   Make some simple substitutions to variable names before display
