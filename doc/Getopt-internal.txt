@@ -3,7 +3,7 @@
                                                    *Getopt_internal*
 
 Author: Patrick Conley <patrick.bj.conley@gmail.com>
-Last change: 2012 Jun 21
+Last change: 2012 Jul 05
 
 1. Functions         |Getopt_internal_functions|
 2. Classes           |Getopt_internal_classes|
@@ -336,13 +336,11 @@ Test: throws exception on invalid global data
 Getopt#Run
 
 Test: aborts cleanly on unknown filetype
-Note: from current t/filetype.vim
 
 Test: uses saved ft object if it exists
 Test: uses new ft object if it doesn't
 Test: aborts cleanly if ft.opt_keys is undefined
 Test: aborts cleanly if no data is entered
-Note: broadly from current t/data.vim
 
 Test: a number of complete calls
 Note: from current t/filetype.vim

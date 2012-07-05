@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 12
+" Last Changed:  2012 Jul 05
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt-internal.txt
@@ -22,7 +22,7 @@ silent echo Getopt#Filetype
 
 let test_call = "call Getopt#Run()"
 
-call vimtap#Plan(7)
+call vimtap#Plan(13)
 
 " Getopt {{{1
 " Getopt#Run {{{2
@@ -83,3 +83,88 @@ call vimtap#Is( Getopt#Run(), "Getopt: No options entered.",
          \ "Run aborts if no data is entered" )
 
 call Getopt#Saved.Init()
+
+" Run generates expected output for valid input (x6) {{{3
+
+" String output, no globals {{{4
+let test_ft = Getopt#Filetype.New( 5, -1, -1, 1 )
+call test_ft.Save()
+
+let result = 
+         \ "NO GLOBALS\n" .
+         \ "local_nodef1: 1\n" .
+         \ "local_nodef2: 1\n" .
+         \ "local_def: 1\n"
+
+call vimtap#Is( Getopt#Run(), result, "Run works: string output, no globals" )
+unlet result
+
+" List output, no globals {{{4
+let test_ft = Getopt#Filetype.New( 5, -1, -1, 2 )
+call test_ft.Save()
+
+let result = [
+         \ "NO GLOBALS",
+         \ "local_nodef1: 1",
+         \ "local_nodef2: 1",
+         \ "local_def: 1" ]
+
+call vimtap#Is( Getopt#Run(), result, "Run works: list output, no globals" )
+unlet result
+
+" String output, with globals {{{4
+let test_ft = Getopt#Filetype.New( 7, 7, -1, 1 )
+call test_ft.Save()
+
+let result = 
+         \ "global_nodef1: 1\n" .
+         \ "global_nodef2: 1\n" .
+         \ "global_def: 1\n" .
+         \ "local_nodef1: 1\n" .
+         \ "local_nodef2: 1\n" .
+         \ "local_def: 1\n"
+
+call vimtap#Is( Getopt#Run(), result, "Run works: string output with globals" )
+unlet result
+
+" List output, with globals {{{4
+let test_ft = Getopt#Filetype.New( 7, 7, -1, 2 )
+call test_ft.Save()
+
+let result = [
+         \ "global_nodef1: 1",
+         \ "global_nodef2: 1",
+         \ "global_def: 1",
+         \ "local_nodef1: 1",
+         \ "local_nodef2: 1",
+         \ "local_def: 1" ]
+
+call vimtap#Is( Getopt#Run(), result, "Run works: list output with globals" )
+unlet result
+
+ " " String output, without locals {{{4
+ " let test_ft = Getopt#Filetype.New( 6, 6, -1, 1 )
+ " call test_ft.Save()
+ " 
+ " let result = 
+ "          \ "global_nodef1: 1\n" .
+ "          \ "global_nodef2: 1\n" .
+ "          \ "global_def: 1\n" .
+ "          \ "NO LOCALS\n"
+ " 
+ " call vimtap#Is( Getopt#Run(), result, "Run works: string output without locals" )
+ " unlet result
+ " 
+ " " List output, without locals {{{4
+ " let test_ft = Getopt#Filetype.New( 6, 6, -1, 2 )
+ " call test_ft.Save()
+ " 
+ " let result = [
+ "          \ "global_nodef1: 1",
+ "          \ "global_nodef2: 1",
+ "          \ "global_def: 1",
+ "          \ "NO LOCALS" ]
+ " 
+ " call vimtap#Is( Getopt#Run(), result, "Run works: list output without locals" )
+ " unlet result
+ " 

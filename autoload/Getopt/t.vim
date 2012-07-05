@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 21
+" Last Changed:  2012 Jul 05
 " License:       This module (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt
@@ -50,16 +50,15 @@ let Getopt#t#ft = {}
 function Getopt#t#ft.New(...) dict " {{{1
 
    " Declare flags {{{2
-   let s:Getopt_var_flags = a:0 == 4 && a:1 >= 0 ? a:1 
-            \ : exists("g:Getopt_var_flags") ? g:Getopt_var_flags : 5
-   let s:Getopt_func_flags = a:0 == 4 && a:1 >= 0 ? a:1 
-            \ : exists("g:Getopt_func_flags") ? g:Getopt_func_flags : 5
-   let s:Getopt_func_opt_flag = a:0 == 4 && a:1 >= 0 ? a:1 
-            \ : exists("g:Getopt_func_opt_flag") ? g:Getopt_func_opt_flag : 5
-   let s:Getopt_write_output = a:0 == 4 && a:1 >= 0 ? a:1 
-            \ : exists("g:Getopt_write_output") ? g:Getopt_write_output : 5
+   let s:Getopt_var_flags     = ( a:0 == 4 && a:1 >= 0 ) ? a:1
+            \ : exists("g:Getopt_var_flags")     ? g:Getopt_var_flags     : 5
+   let s:Getopt_func_flags    = ( a:0 == 4 && a:2 >= 0 ) ? a:2
+            \ : exists("g:Getopt_func_flags")    ? g:Getopt_func_flags    : 5
+   let s:Getopt_func_opt_flag = ( a:0 == 4 && a:3 >= 0 ) ? a:3
+            \ : exists("g:Getopt_func_opt_flag") ? g:Getopt_func_opt_flag : 15
+   let s:Getopt_write_output  = ( a:0 == 4 && a:4 >= 0 ) ? a:4
+            \ : exists("g:Getopt_write_output")  ? g:Getopt_write_output  : 1
    " }}}2
-
 
    " Check arguments
    if ( ( a:0 != 0 && a:0 != 4 ) && and( s:Getopt_func_opt_flag, 1 ) )
@@ -168,6 +167,44 @@ function Getopt#t#ft.Write() dict " {{{1
    " Output a list if the flag is set, a string else
    if ( s:Getopt_write_output == 1 )
       " {{{
+      let output = ''
+
+      " Globals (if set)
+      if and( s:Getopt_var_flags, 2 )
+         if empty( self.global_data['global_nodef1'] )
+            let output .= "global_nodef1: UNSET\n"
+         else
+            let output .= "global_nodef1: " 
+                     \ . self.global_data['global_nodef1'] . "\n"
+         endif
+
+         let output .= "global_nodef2: " 
+                  \ . self.global_data['global_nodef2'] . "\n"
+         let output .= "global_def: " . self.global_data['global_def'] . "\n"
+      else
+         let output .= "NO GLOBALS\n"
+      endif
+
+      " All locals (if any exist)
+      if ! empty( self.opt_data )
+         for opt_data_item in self.opt_data
+
+            if empty( opt_data_item['local_nodef1'] )
+               let output .= "local_nodef1: UNSET\n"
+            else
+               let output .= "local_nodef1: " . opt_data_item['local_nodef1'] . "\n"
+            endif
+
+            let output .= "local_nodef2: " . opt_data_item['local_nodef2'] . "\n"
+            let output .= "local_def: " . opt_data_item['local_def'] . "\n"
+         endfor
+      else
+         let output .= "NO LOCALS\n"
+      endif
+
+   " }}}
+   elseif ( s:Getopt_write_output == 2 )
+      " {{{
       let output = []
 
       " Globals (if set)
@@ -204,44 +241,6 @@ function Getopt#t#ft.Write() dict " {{{1
       endif
 
       " }}}
-   elseif ( s:Getopt_write_output == 2 )
-      " {{{
-      let output = ''
-
-      " Globals (if set)
-      if and( s:Getopt_var_flags, 2 )
-         if empty( self.global_opts['global_nodef1'] )
-            let output .= "global_nodef1: UNSET\n"
-         else
-            let output .= "global_nodef1: " 
-                     \ . self.global_opts['global_nodef1'] . "\n"
-         endif
-
-         let output .= "global_nodef2: " 
-                  \ . self.global_opts['global_nodef2'] . "\n"
-         let output .= "global_def: " . self.global_opts['global_def'] . "\n"
-      else
-         let output .= "NO GLOBALS\n"
-      endif
-
-      " All locals (if any exist)
-      if ! empty( self.opts )
-         for thisopt in self.opts
-
-            if empty( thisopt['local_nodef1'] )
-               let output .= "local_nodef1: UNSET\n"
-            else
-               let output .= "local_nodef1: " . thisopt['local_nodef1'] . "\n"
-            endif
-
-            let output .= "local_nodef2: " . thisopt['local_nodef2'] . "\n"
-            let output .= "local_def: " . thisopt['local_def'] . "\n"
-         endfor
-      else
-         let output .= "NO LOCALS\n"
-      endif
-
-   " }}}
    elseif ( s:Getopt_write_output == 3 )
       output = {}
    elseif ( s:Getopt_write_output == 4 )

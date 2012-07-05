@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 22
+" Last Changed:  2012 Jul 05
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt and Getopt-internal.txt
@@ -131,8 +131,8 @@ function Getopt#Filetype.Save() dict
       let self.last_data = self.opt_data
       let self.opt_data = []
 
-      call g:Getopt#Saved.SetFt( &ft, self )
    endif
+      call g:Getopt#Saved.SetFt( &ft, self )
 endfunc
 
 " Method: .HasData() {{{3
