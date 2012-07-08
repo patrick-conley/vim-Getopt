@@ -26,8 +26,3 @@ clean:
 	vim -c "execute 'RmVimball' '${PLUGIN}'" -c 'q'
 	rm -rf ${PATHOGEN}/${PLUGIN}/
 	rm -f ${PLUGIN}.vba*
-
-# For internal use only
-edit:
-	vim plugin/Getopt.vim -c "abo sp todo" -c "bot vsp autoload/Getopt.vim" -c "tabe doc/Getopt-internal.txt | bel vsp doc/Getopt.txt" -c "tabe Makefile" -c "tabe autoload/Getopt/matlab.vim | bel vsp autoload/Getopt/c.vim" -c "tabe autoload/Getopt/t.vim" -c "bel vsp t/002-get_input.vim" -c "tabn"
-
