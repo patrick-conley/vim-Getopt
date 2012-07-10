@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jul 07
+" Last Changed:  2012 Jul 09
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt-internal.txt
@@ -8,10 +8,10 @@
 set filetype=t
 silent echo Getopt#Filetype
 
-call vimtap#Plan(12)
+call vimtap#Plan(14)
 
 " Getopt#Filetype {{{1
-" Getopt#Filetype.New() (x1) {{{2
+" Getopt#Filetype.New() (x3) {{{2
 
 " fails on unset .opt_keys and .global_keys
 call vimtap_except#Like( "call g:Getopt#Filetype.New( 0, -1, -1, -1 )", 
@@ -20,8 +20,8 @@ call vimtap_except#Like( "call g:Getopt#Filetype.New( 0, -1, -1, -1 )",
 
 call vimtap_except#Lives( "call g:Getopt#Filetype.New( 1, -1, -1, -1 )",
 			\ "Filetype.New() lives if ft module sets .opt_keys" )
-call vimtap_except#Lives( "call g:Getopt#Filetype.New( 2, -1, -1, -1 )",
-			\ "Filetype.New() lives if ft module sets .global_keys
+call vimtap_except#Lives( "call g:Getopt#Filetype.New( 2, 6, -1, -1 )",
+			\ "Filetype.New() lives if ft module sets .global_keys" )
 
 " Getopt#Filetype.Compare() (x6) {{{2
 
@@ -66,7 +66,7 @@ let test_ft.opt_data = [ 1, 2 ]
 call vimtap#Is( test_ft.HasData(), 1,
          \ "Filetype.HasData() succeeds (opt_data defined)" )
 
-let test_ft = Getopt#Filetype.New( 3, -1, -1, -1 )
+let test_ft = Getopt#Filetype.New( 3, 7, -1, -1 )
 
 let test_ft.opt_data = [ 1, 2 ]
 call vimtap#Is( test_ft.HasData(), 0,

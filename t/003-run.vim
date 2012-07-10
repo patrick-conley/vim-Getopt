@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jul 05
+" Last Changed:  2012 Jul 09
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt-internal.txt
@@ -142,29 +142,29 @@ let result = [
 call vimtap#Is( Getopt#Run(), result, "Run works: list output with globals" )
 unlet result
 
- " " String output, without locals {{{4
- " let test_ft = Getopt#Filetype.New( 6, 6, -1, 1 )
- " call test_ft.Save()
- " 
- " let result = 
- "          \ "global_nodef1: 1\n" .
- "          \ "global_nodef2: 1\n" .
- "          \ "global_def: 1\n" .
- "          \ "NO LOCALS\n"
- " 
- " call vimtap#Is( Getopt#Run(), result, "Run works: string output without locals" )
- " unlet result
- " 
- " " List output, without locals {{{4
- " let test_ft = Getopt#Filetype.New( 6, 6, -1, 2 )
- " call test_ft.Save()
- " 
- " let result = [
- "          \ "global_nodef1: 1",
- "          \ "global_nodef2: 1",
- "          \ "global_def: 1",
- "          \ "NO LOCALS" ]
- " 
- " call vimtap#Is( Getopt#Run(), result, "Run works: list output without locals" )
- " unlet result
- " 
+" String output, without locals {{{4
+let test_ft = Getopt#Filetype.New( 6, 6, -1, 1 )
+call test_ft.Save()
+
+let result = 
+         \ "global_nodef1: 1\n" .
+         \ "global_nodef2: 1\n" .
+         \ "global_def: 1\n" .
+         \ "NO LOCALS\n"
+
+call vimtap#Is( Getopt#Run(), result, "Run works: string output without locals" )
+unlet result
+
+" List output, without locals {{{4
+let test_ft = Getopt#Filetype.New( 6, 6, -1, 2 )
+call test_ft.Save()
+
+let result = [
+         \ "global_nodef1: 1",
+         \ "global_nodef2: 1",
+         \ "global_def: 1",
+         \ "NO LOCALS" ]
+
+call vimtap#Is( Getopt#Run(), result, "Run works: list output without locals" )
+unlet result
+

@@ -150,11 +150,14 @@ endfunc
 "  - none of the members have been completely deleted
 " Validation: N/A
 function Getopt#Filetype.HasData() dict
-   if ( !empty( self.opt_data ) || !empty( self.global_data ) )
-      return 1
+
+   if ( !empty( self.opt_keys ) && empty( self.opt_data ) )
+      return 0
+   elseif ( !empty( self.global_keys ) && empty( self.global_data ) )
+      return 0
    endif
 
-   return 0
+   return 1
 endfunc
 
 " Method: .SetInputList( @input ) {{{3
