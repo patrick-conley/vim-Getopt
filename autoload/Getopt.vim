@@ -1,7 +1,7 @@
 " Getopt:        write fairly simple (but potentially lengthy) options parsing
 "                for various languages
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jul 05
+" Last Changed:  2012 Jul 09
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt.txt and Getopt-internal.txt
@@ -52,8 +52,8 @@ function Getopt#Filetype.New( ... ) dict
    endtry
 
    " Double-check opt_keys is set
-   if empty( new_ft.opt_keys )
-      throw "Getopt#Filetype: opt_keys not set by Getopt#" . &ft . "#ft.New()"
+   if !g:Getopt#Filetype.Compare( new_ft )
+      throw "Getopt#Filetype: FT object set by Getopt#" . &ft . " is invalid"
    endif
 
    return new_ft
@@ -88,13 +88,13 @@ endfunc
 function Getopt#Filetype.Compare( obj ) dict
 
    " members that should exist {{{4
-   let required_members = [ "Save", "HasData", "SetInputList", "Validate",
-            \ "Write", "opt_keys", "global_keys", "opt_data", "global_data",
+   let required_members = [ "Save", "HasData", "SetInputList", "Write",
+            \ "opt_keys", "global_keys", "opt_data", "global_data",
             \ "last_data", "last_global" ]
-   let required_types = [ 2, 2, 2, 2, 2, 3, 3, 3, 4, 3, 4 ]
+   let required_types = [ 2, 2, 2, 2, 3, 3, 3, 4, 3, 4 ]
 
-   let optional_members = [ "Validate_global", "input" ]
-   let optional_types = [ 2, 3 ]
+   let optional_members = [ "Validate", "Validate_global", "input" ]
+   let optional_types = [ 2, 2, 3 ]
 
    " Test required member variables exist {{{4
    for i in range( len( required_members ) )
@@ -113,6 +113,15 @@ function Getopt#Filetype.Compare( obj ) dict
          return 0
       endif
    endfor
+
+   " Test opt_keys or global_keys is defined {{{4
+   if ( empty( a:obj.opt_keys ) && empty( a:obj.global_keys ) )
+      return 0
+   elseif ( !empty( a:obj.opt_keys ) && !exists( "a:obj.Validate" ) )
+      return 0
+   elseif ( !empty( a:obj.global_keys ) && !exists( "a:obj.Validate_global" ) )
+      return 0
+   endif
 
    " }}}4
 
@@ -141,13 +150,11 @@ endfunc
 "  - none of the members have been completely deleted
 " Validation: N/A
 function Getopt#Filetype.HasData() dict
-   if empty( self.opt_data )
-      return 0
-   elseif ! empty( self.global_keys ) && empty( self.global_data )
-      return 0
+   if ( !empty( self.opt_data ) || !empty( self.global_data ) )
+      return 1
    endif
 
-   return 1
+   return 0
 endfunc
 
 " Method: .SetInputList( @input ) {{{3
@@ -354,25 +361,27 @@ function Getopt#_Get_input( buffer_ft )
       endif
 
       " Enter settings for each option {{{3
+      if !empty( a:buffer_ft.opt_keys )
 
-      echo "Per-option data:"
-      echo "Press ^C to finish"
-      while (1)
+         echo "Per-option data:"
+         echo "Press ^C to finish"
+         while (1)
 
-         let opt_input = has_key( a:buffer_ft, "input" ) 
-                  \ ? Getopt#_Read_data( a:buffer_ft.opt_keys, a:buffer_ft.input )
-                  \ : Getopt#_Read_data( a:buffer_ft.opt_keys )
+            let opt_input = has_key( a:buffer_ft, "input" ) 
+                     \ ? Getopt#_Read_data( a:buffer_ft.opt_keys, a:buffer_ft.input )
+                     \ : Getopt#_Read_data( a:buffer_ft.opt_keys )
 
 
-         " Validate input
-         if a:buffer_ft.Validate( opt_input )
-            let a:buffer_ft.opt_data += [ opt_input ]
-            echomsg "Option recorded"
-         else
-            echomsg "Invalid option ignored"
-         endif
+            " Validate input
+            if a:buffer_ft.Validate( opt_input )
+               let a:buffer_ft.opt_data += [ opt_input ]
+               echomsg "Option recorded"
+            else
+               echomsg "Invalid option ignored"
+            endif
 
-      endwhile
+         endwhile
+      endif
 
       " }}}3
 
@@ -417,6 +426,7 @@ function Getopt#_Read_data( key_list, ... )
          let in_data[this.name] = 
                   \ input( Getopt#_Rename_for_input(this.name) . ' > ',
                   \ in_data[this.name] )
+         echo "\n"
       endif
    endfor
 
@@ -443,7 +453,7 @@ function Getopt#_Rename_for_input( var )
 
    let pattern = [ 
             \ '_', ' ',
-            \ '^\(is\|has\|does\).*$', '&?'
+            \ '^\(is\|has\|does\|allow\).*$', '&?'
             \ ]
 
    for i in range( 0, len(pattern)-1, 2 )

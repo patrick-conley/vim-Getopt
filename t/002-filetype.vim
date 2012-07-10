@@ -1,5 +1,5 @@
 " Author:        Patrick Conley <patrick.bj.conley@gmail.com>
-" Last Changed:  2012 Jun 21
+" Last Changed:  2012 Jul 07
 " License:       This plugin (and all assoc. files) are available under the
 "                same license as Vim itself.
 " Documentation: see Getopt-internal.txt
@@ -13,10 +13,15 @@ call vimtap#Plan(12)
 " Getopt#Filetype {{{1
 " Getopt#Filetype.New() (x1) {{{2
 
-" fails on unset .opt_keys
+" fails on unset .opt_keys and .global_keys
 call vimtap_except#Like( "call g:Getopt#Filetype.New( 0, -1, -1, -1 )", 
          \ "^Getopt#Filetype",
-         \ "Filetype.New() fails if ft plugin doesn't set .opt_keys" )
+         \ "Filetype.New() fails if ft module doesn't set .opt_keys or global_keys" )
+
+call vimtap_except#Lives( "call g:Getopt#Filetype.New( 1, -1, -1, -1 )",
+			\ "Filetype.New() lives if ft module sets .opt_keys" )
+call vimtap_except#Lives( "call g:Getopt#Filetype.New( 2, -1, -1, -1 )",
+			\ "Filetype.New() lives if ft module sets .global_keys
 
 " Getopt#Filetype.Compare() (x6) {{{2
 
