@@ -1,3 +1,5 @@
+Warning: this project is abandoned and probably non-functional.
+
 getopt.vim
 ==========
 
